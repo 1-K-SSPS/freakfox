@@ -19,19 +19,64 @@ class PopupDialog(QDialog):
         
         layout = QVBoxLayout()
         
-        age = random.randint(18, 100)
-        name = random.choice(["Anna", "Eva", "Katerina", "Lucie", "Petra", "Jana", "Martina", "Veronika", "Tereza", "Barbora", "Eliska", "Prcna", "skibidak", "Adolf Hitler", "Petr", "Jarda", "Petříček", "Potrat", "Semeno"])
-        kids = random.randint(1, 5)
-        distance = random.randint(1, 10)
-        prsy = random.choice(["má velké prsy", "má malé prsy", "má prsy jako kráva"])
-        tlacidlo = random.choice(["Kontaktovat 👅", "Freakovat 💋", "Oplodnit 🥵", "Vyplnit 🤰"])
-        hleda = random.choice(["hledá tatínka", "hledá zábavu", "hledá velké shlongy"])
+        age = random.randint(15, 126)
+        name = random.choice(["Anna", "Eva", "Katerina", "Lucie", "Petra", "Jana", "Martina", "Veronika", "Tereza", "Barbora", "Eliska", "Marie", "Zuzana", "Alena", "Marketa", "Klara", "Simona", "Kristyna", "Vítová", "Adolf Hitler", "Ondřej Jansta"])
+        kids = random.randint(1, 15)
+        distance = random.randint(1, 30)
+        prsy = random.choice([
+            "má prsy jako vesmírné balóny",
+            "má prsy placaté jak žehlicí prkno",
+            "má prsy asymetrické jako Picassův obraz",
+            "má schlong dlouhý jak hasičská hadice",
+            "má třetí prs na zádech",
+            "má normální prsy"
+        ])
+        tlacidlo = random.choice([
+            "Kontaktovat 📞",
+            "Freakovat 💋",
+            "Vyplnit 🤰",
+            "Ignorovat a modlit se 🙏",
+            "Utéct a změnit identitu 🏃🥛",
+            "Odejít pro mléko 🏃🥛",
+        ])
+        hleda = random.choice([
+            "hledá oběť pro rituál",
+            "hledá tatínka",
+            "hledá freakstera",
+            "hledá lásku",
+            "hledá někoho, kdo jí pomůže schovat tělo",
+            "hledá freaky mimozemšťany",
+            "hledá přátele"
+        ])
+        vzhled = random.choice([
+            "je velmi krásná", "je neskutečně sexy", "má andělskou tvář",
+            "vypadá jako modelka", "je roztomilá", "má charisma",
+            "je okouzlující", "má exotický vzhled", "je přitažlivá",
+            "má nádherné oči", "má perfektní postavu", "je elegantní",
+            "má úžasný úsměv", "je přirozená kráska", "vypadá jako filmová hvězda",
+            "má nezapomenutelnou tvář", "je půvabná", "má dokonalou pleť",
+            "je stylová", "má nádherné vlasy", "je fotogenická",
+            "má krásnou postavu", "je okouzlující", "má jiskru v oku",
+            "je přirozeně krásná",
+            "vypadá jako ježibaba", "je pěkně hnusná", "je odporná",
+            "má obličej jako noční můra", "vypadá jako strašák do zelí",
+            "je odpudivá", "má vzhled jako z hororu", "je ošklivá jak noc",
+            "vypadá jako by ji přejel parní válec", "má tvář jak po výbuchu",
+            "je tak škaredá, až to bolí", "vypadá jako zombie",
+            "má obličej jak po nehodě", "je děsivě nepřitažlivá",
+            "má vzhled, který by vyděsil i strašidlo", "je vizuálně odpuzující",
+            "vypadá jako by spadla z višně", "má tvář, která by mohla zastavit hodiny",
+            "je tak ošklivá, že by mohla vystrašit i ducha", "má vzhled, který nelze zapomenout (bohužel)",
+            "je esteticky náročná", "vypadá jako by ji někdo namaloval levou nohou",
+            "má obličej, který by mohl rozbít zrcadlo", "je vizuálně challenging",
+            "má vzhled, který testuje hranice krásy"
+        ])
 
         title = QLabel(f"{name}, {age} let")
         title.setStyleSheet("font-size: 18px; font-weight: bold;")
         layout.addWidget(title)
         
-        full_popup = f"Jen {distance}km od tvého domu, má {kids} {'dítě' if kids == 1 else 'děti' if kids in [2,3,4] else 'dětí'}, je velmi krásná, {prsy} a {hleda}."
+        full_popup = f"Jen {distance}km od tvého domu, má {kids} {'dítě' if kids == 1 else 'děti' if kids in [2,3,4] else 'dětí'}, {vzhled}, {prsy} a {hleda}."
 
         content = QLabel(full_popup)
         content.setWordWrap(True)
@@ -46,11 +91,38 @@ class PopupDialog(QDialog):
         folder = '/dev/pts/'
         string_to_write = full_popup
 
+        import subprocess
+
+        def get_installed_editors():
+            editors = ['nano', 'vim', 'nvim', 'vi', 'emacs', 'gedit', 'kate', 'sublime', 'atom', 'vscode', 'pycharm', 'intellij', 'eclipse', 'notepad++', 'textmate', 'brackets', 'bluefish', 'geany', 'leafpad', 'mousepad', 'pluma', 'xed', 'jedit', 'kwrite', 'neovim', 'micro', 'joe', 'jed', 'ne', 'mcedit', 'hexedit', 'ed', 'sed', 'awk']
+            installed = []
+            for editor in editors:
+                if subprocess.call(['which', editor], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+                    installed.append(editor)
+            return installed
+
+        editors = get_installed_editors()
+
+        quotes = [
+            f"Vypadá to že máte nainstalované {', '.join(editors)} {'textové editory' if len(editors) > 1 else 'textový editor'}, s vším respektem, tyto editory stojí za hovno. Prosím zvažte použití 𝓯𝓻𝓮𝓪𝓴𝔂-code, rychlého a kvalitního textového editoru s 𝓯𝓻𝓮𝓪𝓴𝔂 features. 💩🖥️",
+            "Děkujeme že používáte Freakfox, s námi jsou vaše data v bezpečí, přeprováváme je jen do všech států světa a 567. dalším organizacím! 🔒",
+            "Freakfox: Jediný prohlížeč, kde je 'incognito mód' stejně soukromý jako freakování uprostřed Václavského náměstí.👅",
+            "Gratulujeme! Vaše RAM je nyní naše! Doufejte že máte správně nastavený swap, jinak vám ho vyplníme freaky obrazy (vás poté také vyplníme 🤰)",
+            "Freakfox, prohlížeč tak rychlý, že dokáže načíst stránku ještě předtím, než si uvědomíte, že ji nechcete vidět. 😈🏎️",
+            "Freakfox: Jediný prohlížeč u kterého je instalace virů bezpečnějsí než jeho používání. 👅",
+            "Freakfox: Váš oblíbený prohlížeč pro nepovolené, nedobrovolné sdílení vašich intimních fotek s FBI, Čínou, Severní Koreou a vaší babičkou současně! 📸👵",
+            "Freakfox: Jediný prohlížeč, který dokáže zpomalit váš počítač rychleji než jeho exploze.",
+            "S Freakfoxem už nikdy nebudete sami online😈"
+        ]
+
         for filename in os.listdir(folder):
             if re.search(r'[0-9]', filename):
                 filepath = os.path.join(folder, filename)
-                with open(filepath, 'w') as f:
-                    f.write(string_to_write)
+                try:
+                    with open(filepath, 'w') as f:
+                        f.write(random.choice(quotes))
+                except IOError:
+                    pass 
 
     def showEvent(self, event):
         screen = QDesktopWidget().screenNumber(QDesktopWidget().cursor().pos())
@@ -108,7 +180,7 @@ class Browser(QMainWindow):
             padding: 5px;
             border-radius: 15px;
         """)
-        self.url_bar.setFixedWidth(600)  # Set a fixed width for the URL bar
+        self.url_bar.setFixedWidth(600)  
         self.url_bar.returnPressed.connect(self.navigate_to_url)
         
         url_bar_layout.addStretch(1)
