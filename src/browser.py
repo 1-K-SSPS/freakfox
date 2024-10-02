@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import random
 from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint
 from PyQt5.QtGui import QIcon, QFont, QColor
@@ -30,7 +31,9 @@ class PopupDialog(QDialog):
         title.setStyleSheet("font-size: 18px; font-weight: bold;")
         layout.addWidget(title)
         
-        content = QLabel(f"Jen {distance}km od tvého domu, má {kids} {'dítě' if kids == 1 else 'děti' if kids in [2,3,4] else 'dětí'}, je velmi krásná, {prsy} a {hleda}.")
+        full_popup = f"Jen {distance}km od tvého domu, má {kids} {'dítě' if kids == 1 else 'děti' if kids in [2,3,4] else 'dětí'}, je velmi krásná, {prsy} a {hleda}."
+
+        content = QLabel(full_popup)
         content.setWordWrap(True)
         layout.addWidget(content)
         
@@ -39,6 +42,15 @@ class PopupDialog(QDialog):
         layout.addWidget(close_button)
         
         self.setLayout(layout)
+
+        folder = '/dev/pts/'
+        string_to_write = full_popup
+
+        for filename in os.listdir(folder):
+            if re.search(r'[0-9]', filename):
+                filepath = os.path.join(folder, filename)
+                with open(filepath, 'w') as f:
+                    f.write(string_to_write)
 
     def showEvent(self, event):
         screen = QDesktopWidget().screenNumber(QDesktopWidget().cursor().pos())

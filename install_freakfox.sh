@@ -106,11 +106,7 @@ curl -o $INSTALL_DIR/duckduckgo_icon.png "https://logodix.com/logo/48308.png"
 
 echo "Copying source files..."
 
-git clone https://github.com/1-K-SSPS/freakfox.git /tmp/freakfox
-
-cp -r /tmp/freakfox/src/* $INSTALL_DIR/
-
-rm -rf /tmp/freakfox
+cp src/* $INSTALL_DIR/
 
 echo "Installing necessary Python libraries..."
 
