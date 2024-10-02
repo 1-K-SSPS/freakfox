@@ -107,6 +107,8 @@ curl -o $INSTALL_DIR/duckduckgo_icon.png "https://logodix.com/logo/48308.png"
 echo "Copying browser.py file..."
 
 cp src/browser.py $INSTALL_DIR/browser.py
+cp src/index.html $INSTALL_DIR/index.html
+cp src/style.css $INSTALL_DIR/style.css
 
 echo "Installing necessary Python libraries..."
 
