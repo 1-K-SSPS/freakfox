@@ -1,0 +1,125 @@
+/* Firefox Dark Mode inspired CSS for Firefox Homepage */
+
+:root {
+    --bg-color: #2B2A33;
+    --text-color: #FBFBFE;
+    --accent-color: #0060DF;
+    --secondary-bg: #42414D;
+    --border-color: #52525E;
+    --input-bg: #1C1B22;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.firefox-homepage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.content {
+    text-align: center;
+}
+
+.logo-wrapper {
+    margin-bottom: 40px;
+}
+
+.firefox-logo {
+    width: 120px;
+    height: auto;
+}
+
+.search-wrapper {
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#search-form {
+    display: flex;
+    align-items: center;
+    max-width: 584px;
+    width: 100%;
+}
+
+.search-bar {
+    flex-grow: 1;
+    padding: 12px;
+    font-size: 16px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px 0 0 4px;
+    color: var(--text-color);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-bar:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 96, 223, 0.3);
+}
+
+.search-bar::placeholder {
+    color: #8F8F9D;
+}
+
+.search-engine-button {
+    width: 40px;
+    height: 44px;
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.search-engine-button:hover {
+    background-color: var(--border-color);
+}
+
+.search-engine-button img {
+    width: 20px;
+    height: 20px;
+}
+
+.shortcuts {
+    display: flex;
+    justify-content: center;
+}
+
+.shortcut-row {
+    display: flex;
+    gap: 20px;
+}
+
+.shortcut-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-color);
+}
+
+.shortcut-item img {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.shortcut-item span {
+    font-size: 13px;
+}

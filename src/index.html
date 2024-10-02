@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freakfox</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        function changeSearchEngine() {
+            const engines = [
+                { name: "FreakFox", url: "https://cornhub.website/search?q=" },
+                { name: "Google", url: "https://www.google.com/search" },
+                { name: "DuckDuckGo", url: "https://duckduckgo.com/" }
+            ];
+            const currentEngine = document.getElementById('search-form').action;
+            const currentIndex = engines.findIndex(engine => engine.url === currentEngine);
+            const nextIndex = (currentIndex + 1) % engines.length;
+            document.getElementById('search-form').action = engines[nextIndex].url;
+            document.getElementById('search-engine-icon').src = `${engines[nextIndex].name.toLowerCase()}_icon.png`;
+        }
+    </script>
+</head>
+<body>
+    <div class="firefox-homepage">
+        <main class="content">
+            <div class="logo-wrapper">
+                <img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse4.explicit.bing.net%2Fth%3Fid%3DOIP.RKC67blFYi4k7A1B7AxHuAAAAA%26pid%3DApi&f=1&ipt=426f4b49cefb8348465bc3ee881fe43371fb243dd63e3461021d555e2929a463&ipo=images" alt="Firefox Logo" class="firefox-logo">
+                <h1>Welcome to 𝓕𝓻𝓮𝓪𝓴fox 👅</h1>
+            </div>
+            <div class="search-wrapper">
+                <form id="search-form" action="https://cornhub.website/search" method="get">
+                    <input type="text" name="q" placeholder="Freak the web" class="search-bar">
+                    <button type="button" onclick="changeSearchEngine()" class="search-engine-button">
+                        <img id="search-engine-icon" src="freakfox_icon.png" alt="Search Engine Icon">
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

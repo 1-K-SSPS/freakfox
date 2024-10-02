@@ -6,8 +6,7 @@ from PyQt5.QtGui import QIcon, QFont, QColor
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QToolBar, QAction, QLineEdit, 
     QTabWidget, QWidget, QVBoxLayout, QStatusBar, QPushButton,
-    QStyleFactory, QHBoxLayout, QDialog, QLabel, QDesktopWidget, QComboBox,
-    QListView, QScrollBar
+    QStyleFactory, QHBoxLayout, QDialog, QLabel, QDesktopWidget
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
 
@@ -21,7 +20,7 @@ class PopupDialog(QDialog):
         
         age = random.randint(18, 100)
         name = random.choice(["Anna", "Eva", "Katerina", "Lucie", "Petra", "Jana", "Martina", "Veronika", "Tereza", "Barbora", "Eliska", "Prcna", "skibidak", "Adolf Hitler", "Petr", "Jarda", "Petříček", "Potrat", "Semeno"])
-        kids = random.randint(0, 5)
+        kids = random.randint(1, 5)
         distance = random.randint(1, 10)
         prsy = random.choice(["má velké prsy", "má malé prsy", "má prsy jako kráva"])
         tlacidlo = random.choice(["Kontaktovat 👅", "Freakovat 💋", "Oplodnit 🥵", "Vyplnit 🤰"])
@@ -83,8 +82,11 @@ class Browser(QMainWindow):
         
         self.add_navigation_buttons()
         
-        self.current_search_engine = "http://freakfox.wz.cz:8080/"
-        self.add_search_engine_selector()
+        self.current_search_engine = "file://" + os.path.abspath(os.path.join(os.path.dirname(__file__), "index.html"))
+        
+        url_bar_container = QWidget()
+        url_bar_layout = QHBoxLayout(url_bar_container)
+        url_bar_layout.setContentsMargins(0, 0, 0, 0)
         
         self.url_bar = QLineEdit()
         self.url_bar.setStyleSheet("""
@@ -94,8 +96,14 @@ class Browser(QMainWindow):
             padding: 5px;
             border-radius: 15px;
         """)
+        self.url_bar.setFixedWidth(600)  # Set a fixed width for the URL bar
         self.url_bar.returnPressed.connect(self.navigate_to_url)
-        self.toolbar.addWidget(self.url_bar)
+        
+        url_bar_layout.addStretch(1)
+        url_bar_layout.addWidget(self.url_bar)
+        url_bar_layout.addStretch(1)
+        
+        self.toolbar.addWidget(url_bar_container)
         
         self.ram_button = QPushButton("DOWNLOAD MORE RAM")
         self.ram_button.setStyleSheet("""
@@ -215,8 +223,9 @@ class Browser(QMainWindow):
         
         button_widget = QWidget()
         button_layout = QHBoxLayout(button_widget)
-        button_layout.setContentsMargins(0, 0, 10, 10)
-        button_layout.setSpacing(10)
+        button_layout.setContentsMargins(0, 0, 0, 10)
+        button_layout.setSpacing(20)
+        button_layout.addStretch(1)
         button_layout.addWidget(self.robux_button)
         button_layout.addWidget(self.moms_button)
         button_layout.addWidget(self.ram_button)
@@ -283,88 +292,6 @@ class Browser(QMainWindow):
 
     def newtab(self):
         self.add_new_tab(QUrl(self.current_search_engine))
-
-    def add_search_engine_selector(self):
-        self.search_engine_selector = QComboBox()
-        self.search_engine_selector.addItem(QIcon("$INSTALL_DIR/freakfox/freakfox_icon.png"), "FreakFox")
-        self.search_engine_selector.addItem(QIcon("$INSTALL_DIR/freakfox/google_icon.png"), "Google")
-        self.search_engine_selector.addItem(QIcon("$INSTALL_DIR/freakfox/duckduckgo_icon.png"), "DuckDuckGo")
-        self.search_engine_selector.currentIndexChanged.connect(self.change_search_engine)
-        self.search_engine_selector.setStyleSheet("""
-            QComboBox {
-                background-color: #2b2b2b;
-                color: #ffffff;
-                border: none;
-                border-radius: 15px;
-                padding: 5px;
-                font-weight: bold;
-                font-size: 14px;
-            }
-            QComboBox:hover {
-                background-color: #3a3a3a;
-            }
-            QComboBox::drop-down {
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 30px;
-                border-left: none;
-                border-top-right-radius: 15px;
-                border-bottom-right-radius: 15px;
-            }
-            QComboBox::down-arrow {
-                image: url(down_arrow.png);
-                width: 16px;
-                height: 16px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #2b2b2b;
-                color: #ffffff;
-                selection-background-color: #3a3a3a;
-                border: none;
-                outline: none;
-            }
-            QComboBox QAbstractItemView::item {
-                height: 30px;
-                padding-left: 10px;
-            }
-            QComboBox QAbstractItemView::item:hover {
-                background-color: #3a3a3a;
-            }
-            QComboBox QListView {
-                background-color: #2b2b2b;
-            }
-        """)
-        self.search_engine_selector.setFixedSize(150, 30)
-        
-       
-        view = QListView()
-        view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.search_engine_selector.setView(view)
-        
-        
-        self.search_engine_selector.view().setFixedHeight(int(45 * 1.5))
-        
-        self.toolbar.addWidget(self.search_engine_selector)
-
-    def change_search_engine(self, index):
-        if index == 0:
-            self.current_search_engine = "http://freakfox.wz.cz:8080/"
-        elif index == 1:
-            self.current_search_engine = "https://www.google.com/search?q="
-        elif index == 2:
-            self.current_search_engine = "https://duckduckgo.com/?q="
-        
-        
-        for i in range(self.tabs.count()):
-            browser = self.tabs.widget(i).findChild(QWebEngineView)
-            if browser.url().toString().startswith(self.current_search_engine):
-                browser.setUrl(QUrl(self.current_search_engine))
-                self.tabs.setCurrentIndex(i)
-                return
-        
-        
-        self.add_new_tab(QUrl(self.current_search_engine), "Search Engine")
 
     def add_popup_disabler(self):
         self.popup_disabler = QPushButton()
