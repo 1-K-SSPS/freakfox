@@ -27,3 +27,8 @@ Dependencies: Nic, script vše nainstaluje
 - 𝓯𝓻𝓮𝓪𝓴𝔂
 - Crazy install script
 - App launcher entry
+
+## proč si vybrat právě freak fox?
+ - Úplná blokace sušenek
+ - upozornění na freaky maminy v tvé oblasti
+ - no cromium i.g. pyqt5 based
