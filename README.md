@@ -1,7 +1,7 @@
 # Freakfox
 ### 𝓯𝓻𝓮𝓪𝓴𝔂  browser 👅👅👅
 
-Linux-only browser, windows stojí za nic.
+Linux-only browser, Windows stojí za nic.
 
 > [!Warning]  
 > Script nemusí fungovat na všech distribucích.
@@ -28,7 +28,8 @@ Dependencies: Nic, script vše nainstaluje
 - Crazy install script
 - App launcher entry
 
-## proč si vybrat právě freak fox?
+## Proč si vybrat právě freakfox?
+ - Silena bezpecnost (funguje tak malo veci ze ani prokliky na reklamy nefunguji (neni to bug, je to feature) browser nikam nic neposila a nic neuklada (taky neni bug, je to feature))
  - Úplná blokace sušenek
  - upozornění na freaky maminy v tvé oblasti
  - no cromium i.g. pyqt5 based
