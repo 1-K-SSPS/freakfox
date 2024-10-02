@@ -104,14 +104,15 @@ curl -o $INSTALL_DIR/freakfox_icon.png "https://tse4.explicit.bing.net/th?id=OIP
 curl -o $INSTALL_DIR/google_icon.png "https://www.pngmart.com/files/16/Google-Logo-PNG-Image.png"
 curl -o $INSTALL_DIR/duckduckgo_icon.png "https://logodix.com/logo/48308.png"
 
-echo "Copying browser.py file..."
+echo "Copying source files..."
 
-cp src/browser.py $INSTALL_DIR/browser.py
-cp src/index.html $INSTALL_DIR/index.html
-cp src/style.css $INSTALL_DIR/style.css
+git clone https://github.com/1-K-SSPS/freakfox.git /tmp/freakfox
+
+cp -r /tmp/freakfox/src/* $INSTALL_DIR/
+
+rm -rf /tmp/freakfox
 
 echo "Installing necessary Python libraries..."
-
 
 echo "Creating app launcher entry..."
 
