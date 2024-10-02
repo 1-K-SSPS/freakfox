@@ -10,13 +10,14 @@
             const engines = [
                 { name: "FreakFox", url: "https://cornhub.website/search?q=" },
                 { name: "Google", url: "https://www.google.com/search" },
-                { name: "DuckDuckGo", url: "https://duckduckgo.com/" }
+                { name: "DuckDuckGo", url: "https://duckduckgo.com/" },
+                { name: "Rohlig", url: "http://1kparky.unas.cz:8080/" }
             ];
             const currentEngine = document.getElementById('search-form').action;
             const currentIndex = engines.findIndex(engine => engine.url === currentEngine);
             const nextIndex = (currentIndex + 1) % engines.length;
             document.getElementById('search-form').action = engines[nextIndex].url;
-            document.getElementById('search-engine-icon').src = `${engines[nextIndex].name.toLowerCase()}_icon.png`;
+            document.getElementById('search-engine-icon').src = engines[nextIndex].name === "Rohlig" ? "http://1kparky.unas.cz:8080/images/rohlig.png" : `${engines[nextIndex].name.toLowerCase()}_icon.png`;
         }
     </script>
 </head>
