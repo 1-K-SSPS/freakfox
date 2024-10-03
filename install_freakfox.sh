@@ -153,7 +153,7 @@ python3 -m venv "$INSTALL_DIR/venv" || { echo "Failed to create virtual environm
 source "$INSTALL_DIR/venv/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
 echo "Installing necessary Python libraries..."
-pip install -r requirements.txt || { echo "Failed to install Python libraries"; exit 1; }
+pip install PyQt5 PyQtWebEngine pygame || { echo "Failed to install Python libraries"; exit 1; }
 
 deactivate
 
