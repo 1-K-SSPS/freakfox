@@ -27,9 +27,12 @@ Dependencies: Nic, script vše nainstaluje
 - 𝓯𝓻𝓮𝓪𝓴𝔂
 - Crazy install script
 - App launcher entry
+- Freakbob náhodně začne volat
+- Inbuilt gambling
 
 ## Proč si vybrat právě freakfox?
  - Silena bezpecnost (funguje tak malo veci ze ani prokliky na reklamy nefunguji (neni to bug, je to feature) browser nikam nic neposila a nic neuklada (taky neni bug, je to feature))
- - Úplná blokace sušenek
+ - Úplná blokace sušenek (nemá kam je ukládat)
  - upozornění na freaky maminy v tvé oblasti
  - no cromium i.g. pyqt5 based
+ - Inbuilt gambling
