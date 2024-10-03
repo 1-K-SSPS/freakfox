@@ -76,4 +76,50 @@ install_packages() {
     fi
 }
 
-# ... (rest of the script remains unchanged)
+if grep -q "Arch" /etc/os-release; then
+    install_packages "arch"
+elif grep -q "Debian" /etc/os-release || grep -q "Ubuntu" /etc/os-release || grep -q "Kali" /etc/os-release; then
+    install_packages "debian"
+elif grep -q "Fedora" /etc/os-release; then
+    install_packages "fedora"
+else
+    echo "Unsupported Linux distribution. Please install the required packages manually."
+fi
+
+if ! command -v python3 &> /dev/null || ! command -v pip3 &> /dev/null
+then
+    echo "Python3 and pip3 are required to run this script. Please install them and try again."
+    exit 1
+fi
+
+INSTALL_DIR=~/.local/share/freakfox
+echo "Installing in directory: $INSTALL_DIR"
+
+mkdir -p "$INSTALL_DIR"
+
+echo "Downloading icons..."
+curl -o $INSTALL_DIR/freakfox_icon.png "https://tse4.explicit.bing.net/th?id=OIP.RKC67blFYi4k7A1B7AxHuAAAAA&pid=Api"
+curl -o $INSTALL_DIR/google_icon.png "https://www.pngmart.com/files/16/Google-Logo-PNG-Image.png"
+curl -o $INSTALL_DIR/duckduckgo_icon.png "https://logodix.com/logo/48308.png"
+
+echo "Copying source files..."
+
+cp src/* $INSTALL_DIR/
+
+echo "Installing necessary Python libraries..."
+
+echo "Creating app launcher entry..."
+
+cat > ~/.local/share/applications/freakfox.desktop << EOL
+[Desktop Entry]
+Name=Freakfox
+Exec=python3 $INSTALL_DIR/browser.py
+Icon=$INSTALL_DIR/freakfox_icon.png
+Type=Application
+Terminal=false
+Categories=GNOME;GTK;Network;WebBrowser;
+EOL
+
+echo " "
+echo " "
+echo "Freakfox was sucessfully installed into $INSTALL_DIR "
