@@ -164,7 +164,7 @@ class ImagePopup(QDialog):
         self.setLayout(layout)
 
         pygame.mixer.init()
-        sound_path = os.path.join(full_dir_path, "freaky.ogg")
+        sound_path = os.path.join(full_dir_path, "get-out-freakbob.mp3")
         self.sound = pygame.mixer.Sound(sound_path)
 
         self.hide_timer = QTimer(self)
@@ -194,7 +194,7 @@ class Browser(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Freakfox')
-        self.setWindowIcon(QIcon('icon.png'))
+        self.setWindowIcon(QIcon('iconlambda: .png'))
         
         self.setGeometry(100, 100, 1200, 800)
         self.setStyle(QStyleFactory.create('Fusion'))
