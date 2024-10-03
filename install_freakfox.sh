@@ -72,7 +72,11 @@ install_packages() {
             echo "Invalid option. Skipping installation of Wofi, Python, and Pip."
         fi
     else
-        echo "Unsupported Linux distribution. Please install the required packages manually."
+        echo "Unsupported Linux distribution. (try installing using pip? [y/n])"
+        read -r backupfallback
+        if [[ $backupfallback == "y" ]]; then
+            pip3 install PyQt5 PyQtWebEngine pygame --break-system-packages
+        fi
     fi
 }
 
