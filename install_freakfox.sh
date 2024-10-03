@@ -11,7 +11,7 @@ install_packages() {
         echo "It seems you're using Arch Linux."
         echo "Choose an option:"
         echo "1 - Install Wofi"
-        echo "2 - Install Python, Pip, python-pyqt5, python-pyqt5-webengine, and python-pygame"
+        echo "2 - Install Python and venv"
         echo "a - Install both Wofi and Python"
         echo "n - Skip this step"
 
@@ -21,13 +21,13 @@ install_packages() {
                 sudo pacman -S wofi --noconfirm || { echo "Failed to install Wofi"; exit 1; }
                 ;;
             2)
-                sudo pacman -S python python-pip python-pyqt5 python-pyqt5-webengine python-pygame --noconfirm --needed || { echo "Failed to install Python dependencies"; exit 1; }
+                sudo pacman -S python python-pip python-virtualenv --noconfirm --needed || { echo "Failed to install Python"; exit 1; }
                 ;;
             a)
-                sudo pacman -S wofi python python-pip python-pyqt5 python-pyqt5-webengine python-pygame --noconfirm --needed || { echo "Failed to install packages"; exit 1; }
+                sudo pacman -S wofi python python-pip python-virtualenv --noconfirm --needed || { echo "Failed to install packages"; exit 1; }
                 ;;
             n)
-                echo "Skipping installation of Wofi, Python, and Pip."
+                echo "Skipping installation of Wofi and Python."
                 ;;
             *)
                 echo "Invalid option. Skipping installation."
@@ -37,7 +37,7 @@ install_packages() {
         echo "It seems you're using a Debian-based system (Debian/Ubuntu/Kali)."
         echo "Choose an option:"
         echo "1 - Install Wofi"
-        echo "2 - Install Python, Pip, pyqt5-dev, and pygame"
+        echo "2 - Install Python and venv"
         echo "a - Install both Wofi and Python"
         echo "n - Skip this step"
 
@@ -47,13 +47,13 @@ install_packages() {
                 sudo apt update && sudo apt install wofi -y || { echo "Failed to install Wofi"; exit 1; }
                 ;;
             2)
-                sudo apt update && sudo apt install python3 python3-pip pyqt5-dev python3-pygame -y || { echo "Failed to install Python dependencies"; exit 1; }
+                sudo apt update && sudo apt install python3 python3-pip python3-venv -y || { echo "Failed to install Python"; exit 1; }
                 ;;
             a)
-                sudo apt update && sudo apt install wofi python3 python3-pip pyqt5-dev python3-pygame -y || { echo "Failed to install packages"; exit 1; }
+                sudo apt update && sudo apt install wofi python3 python3-pip python3-venv -y || { echo "Failed to install packages"; exit 1; }
                 ;;
             n)
-                echo "Skipping installation of Wofi, Python, and Pip."
+                echo "Skipping installation of Wofi and Python."
                 ;;
             *)
                 echo "Invalid option. Skipping installation."
@@ -63,7 +63,7 @@ install_packages() {
         echo "It seems you're using Fedora."
         echo "Choose an option:"
         echo "1 - Install Wofi"
-        echo "2 - Install Python, Pip, PyQt5, PyQtWebEngine, and pygame"
+        echo "2 - Install Python and venv"
         echo "a - Install both Wofi and Python"
         echo "n - Skip this step"
 
@@ -73,15 +73,13 @@ install_packages() {
                 sudo dnf install wofi -y || { echo "Failed to install Wofi"; exit 1; }
                 ;;
             2)
-                sudo dnf install python3 python3-pip python3-pygame -y || { echo "Failed to install Python dependencies"; exit 1; }
-                pip3 install PyQt5 PyQtWebEngine || { echo "Failed to install PyQt5 and PyQtWebEngine"; exit 1; }
+                sudo dnf install python3 python3-pip python3-virtualenv -y || { echo "Failed to install Python"; exit 1; }
                 ;;
             a)
-                sudo dnf install wofi python3 python3-pip python3-pygame -y || { echo "Failed to install packages"; exit 1; }
-                pip3 install PyQt5 PyQtWebEngine || { echo "Failed to install PyQt5 and PyQtWebEngine"; exit 1; }
+                sudo dnf install wofi python3 python3-pip python3-virtualenv -y || { echo "Failed to install packages"; exit 1; }
                 ;;
             n)
-                echo "Skipping installation of Wofi, Python, and Pip."
+                echo "Skipping installation of Wofi and Python."
                 ;;
             *)
                 echo "Invalid option. Skipping installation."
@@ -90,7 +88,7 @@ install_packages() {
     elif [[ $distro == "macos" ]]; then
         echo "It seems you're using macOS."
         echo "Choose an option:"
-        echo "1 - Install Python, Pip, and Homebrew"
+        echo "1 - Install Python and Homebrew"
         echo "n - Skip this step"
 
         read -r option
@@ -103,23 +101,17 @@ install_packages() {
                 fi
                 
                 brew install python3 || { echo "Failed to install Python"; exit 1; }
-                pip3 install PyQt5 PyQtWebEngine pygame || { echo "Failed to install Python dependencies"; exit 1; }
                 ;;
             n)
-                echo "Skipping installation of Python and Pip."
+                echo "Skipping installation of Python."
                 ;;
             *)
                 echo "Invalid option. Skipping installation."
                 ;;
         esac
     else
-        echo "Unsupported Linux distribution or macOS. (try installing using pip? [y/n])"
-        read -r backupfallback
-        if [[ $backupfallback == "y" ]]; then
-            pip3 install PyQt5 PyQtWebEngine pygame --break-system-packages || { echo "Failed to install Python dependencies via pip"; exit 1; }
-        else
-            echo "Skipping installation."
-        fi
+        echo "Unsupported Linux distribution or macOS. Please install Python 3 and venv manually."
+        exit 1
     fi
 }
 
@@ -137,9 +129,9 @@ else
     exit 1
 fi
 
-# Check if Python3 and Pip3 are installed
-if ! command -v python3 &> /dev/null || ! command -v pip3 &> /dev/null; then
-    echo "Python3 and pip3 are required to run this script. Please install them and try again."
+# Check if Python3 is installed
+if ! command -v python3 &> /dev/null; then
+    echo "Python3 is required to run this script. Please install it and try again."
     exit 1
 fi
 
@@ -156,8 +148,14 @@ curl -o "$INSTALL_DIR/duckduckgo_icon.png" "https://logodix.com/logo/48308.png" 
 echo "Copying source files..."
 cp src/* "$INSTALL_DIR/" || { echo "Failed to copy source files"; exit 1; }
 
+echo "Creating and activating virtual environment..."
+python3 -m venv "$INSTALL_DIR/venv" || { echo "Failed to create virtual environment"; exit 1; }
+source "$INSTALL_DIR/venv/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
+
 echo "Installing necessary Python libraries..."
-pip3 install -r requirements.txt || { echo "Failed to install Python libraries"; exit 1; }
+pip install -r requirements.txt || { echo "Failed to install Python libraries"; exit 1; }
+
+deactivate
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     APPS_DIR="$HOME/Applications"
@@ -188,7 +186,9 @@ EOL
 
     cat > "$APPS_DIR/Freakfox.app/Contents/MacOS/Freakfox" << EOL
 #!/bin/bash
+source "$INSTALL_DIR/venv/bin/activate"
 python3 $INSTALL_DIR/browser.py
+deactivate
 EOL
     chmod +x "$APPS_DIR/Freakfox.app/Contents/MacOS/Freakfox"
 
@@ -198,7 +198,7 @@ else
     cat > ~/.local/share/applications/freakfox.desktop << EOL
 [Desktop Entry]
 Name=Freakfox
-Exec=python3 $INSTALL_DIR/browser.py
+Exec=bash -c "source $INSTALL_DIR/venv/bin/activate && python3 $INSTALL_DIR/browser.py && deactivate"
 Icon=$INSTALL_DIR/freakfox_icon.png
 Type=Application
 Terminal=false
