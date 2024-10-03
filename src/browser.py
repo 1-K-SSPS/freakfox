@@ -164,8 +164,16 @@ class ImagePopup(QDialog):
         self.setLayout(layout)
 
         pygame.mixer.init()
-        sound_path = os.path.join(full_dir_path, "get-out-freakbob.mp3")
-        self.sound = pygame.mixer.Sound(sound_path)
+        self.sound_files = [
+            "freaky.mp3",
+            "get-out-freakbob.mp3",
+            "pickupthephone.mp3",
+            "ringtone.mp3"
+        ]
+        self.sounds = {}
+        for sound_file in self.sound_files:
+            sound_path = os.path.join(full_dir_path, sound_file)
+            self.sounds[sound_file] = pygame.mixer.Sound(sound_path)
 
         self.hide_timer = QTimer(self)
         self.hide_timer.timeout.connect(self.hide)
@@ -175,14 +183,15 @@ class ImagePopup(QDialog):
         self.show_timer.start(random.randint(5000, 20000)) 
         
     def showEvent(self, event):
-        screen = QDesktopWidget().screenNumber(QDesktopWidget().cursor().pos())
-        screen_geometry = QDesktopWidget().screenGeometry(screen)
+        parent = self.parent()
+        if parent:
+            parent_rect = parent.geometry()
+            x = parent_rect.left() + (parent_rect.width() - self.width()) // 2
+            y = parent_rect.top() + (parent_rect.height() - self.height()) // 2
+            self.move(x, y)
         
-        x = min(screen_geometry.width() - self.width(), max(0, (screen_geometry.width() - self.width()) // 2))
-        y = min(screen_geometry.height() - self.height(), max(0, (screen_geometry.height() - self.height()) // 2))
-        
-        self.move(x, y)
-        self.sound.play()
+        random_sound = random.choice(list(self.sounds.values()))
+        random_sound.play()
         self.hide_timer.start(1000) 
         super().showEvent(event)
         
@@ -190,11 +199,72 @@ class ImagePopup(QDialog):
         self.show_timer.start(random.randint(5000, 20000))  
         super().hideEvent(event)
 
+class GamblingMachine(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Gambling Machine")
+        self.setFixedSize(300, 200)
+        
+        layout = QVBoxLayout()
+        
+        self.money = 100
+        self.money_label = QLabel(f"Your money: ${self.money}")
+        layout.addWidget(self.money_label)
+        
+        self.result_label = QLabel("Spin to play!")
+        layout.addWidget(self.result_label)
+        
+        self.spin_button = QPushButton("Spin")
+        self.spin_button.clicked.connect(self.spin)
+        layout.addWidget(self.spin_button)
+        
+        self.setLayout(layout)
+        
+        self.emojis = ["🍒", "🍋", "🍊", "🍇", "💎", "7️⃣"]
+        self.spinning = False
+        self.spin_timer = QTimer(self)
+        self.spin_timer.timeout.connect(self.update_spin_animation)
+    
+    def spin(self):
+        if self.spinning:
+            return
+        
+        if self.money <= 0:
+            self.result_label.setText("You're out of money!")
+            return
+        
+        self.spinning = True
+        self.spin_button.setText("Spinning...")
+        self.spin_button.setEnabled(False)
+        
+        self.money -= 10
+        self.spin_count = 0
+        self.spin_timer.start(100)
+    
+    def update_spin_animation(self):
+        self.spin_count += 1
+        emoji_text = " ".join(random.choices(self.emojis, k=3))
+        self.result_label.setText(emoji_text)
+        
+        if self.spin_count >= 20:
+            self.spin_timer.stop()
+            self.spinning = False
+            self.spin_button.setText("Spin")
+            self.spin_button.setEnabled(True)
+            
+            if random.random() < 0.6:
+                self.money += 20
+                self.result_label.setText(f"{emoji_text}\nYou won $10!")
+            else:
+                self.result_label.setText(f"{emoji_text}\nYou lost $10!")
+            
+            self.money_label.setText(f"Your money: ${self.money}")
+
 class Browser(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Freakfox')
-        self.setWindowIcon(QIcon('iconlambda: .png'))
+        self.setWindowIcon(QIcon('freakfox_icon.png'))
         
         self.setGeometry(100, 100, 1200, 800)
         self.setStyle(QStyleFactory.create('Fusion'))
@@ -222,6 +292,25 @@ class Browser(QMainWindow):
         self.add_navigation_buttons()
         
         self.current_search_engine = "file://" + os.path.abspath(os.path.join(os.path.dirname(__file__), "index.html"))
+        
+        self.gambling_button = QPushButton("Gambling")
+        self.gambling_button.setStyleSheet("""
+            QPushButton {
+                background-color: #808080;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 15px;
+                padding: 5px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #A9A9A9;
+            }
+        """)
+        self.gambling_button.clicked.connect(self.open_gambling_machine)
+        self.gambling_button.setFixedSize(100, 30)
+        self.toolbar.addWidget(self.gambling_button)
         
         url_bar_container = QWidget()
         url_bar_layout = QHBoxLayout(url_bar_container)
@@ -292,6 +381,16 @@ class Browser(QMainWindow):
         ram_button_top.clicked.connect(self.newtab)
         ram_button_top.setFixedSize(30, 30)
         self.toolbar.addWidget(ram_button_top)
+        
+        self.button_widget = QWidget()
+        self.button_layout = QHBoxLayout(self.button_widget)
+        self.button_layout.setContentsMargins(0, 0, 0, 10)
+        self.button_layout.setSpacing(20)
+        self.button_layout.addStretch(1)
+        self.button_layout.addWidget(self.robux_button)
+        self.button_layout.addWidget(self.moms_button)
+        self.button_layout.addWidget(self.ram_button)
+        self.button_layout.addStretch(1)
         
         self.add_new_tab()
         
@@ -368,21 +467,10 @@ class Browser(QMainWindow):
         browser_layout.addWidget(browser)
         
         layout.addWidget(browser_widget)
-
-        button_widget = QWidget()
-        button_layout = QHBoxLayout(button_widget)
-        button_layout.setContentsMargins(0, 0, 0, 10)
-        button_layout.setSpacing(20)
-        button_layout.addStretch(1)
-        button_layout.addWidget(self.robux_button)
-        button_layout.addWidget(self.moms_button)
-        button_layout.addWidget(self.ram_button)
-        button_layout.addStretch(1)
-        
-        layout.addWidget(button_widget)
+        layout.addWidget(self.button_widget)
         
         layout.setStretchFactor(browser_widget, 1)
-        layout.setStretchFactor(button_widget, 0)
+        layout.setStretchFactor(self.button_widget, 0)
         
         i = self.tabs.addTab(container, label)
         self.tabs.setCurrentIndex(i)
@@ -479,6 +567,10 @@ class Browser(QMainWindow):
             self.popup_timer.start(random.randint(2500, 10000))
             self.image_popup_timer.start(random.randint(5000, 20000))
             self.popup_disabler.setText("Disable Popups")
+
+    def open_gambling_machine(self):
+        gambling_machine = GamblingMachine(self)
+        gambling_machine.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
