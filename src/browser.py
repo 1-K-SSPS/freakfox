@@ -3,7 +3,7 @@ import os
 import re
 import random
 from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint
-from PyQt5.QtGui import QIcon, QFont, QColor, QImage
+from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QToolBar, QAction, QLineEdit, 
     QTabWidget, QWidget, QVBoxLayout, QStatusBar, QPushButton,
@@ -461,6 +461,7 @@ class Browser(QMainWindow):
                 padding: 5px;
                 font-weight: bold;
                 font-size: 14px;
+                margin-right: 10px;
             }
             QPushButton:hover {
                 background-color: #A9A9A9;
@@ -567,6 +568,143 @@ class Browser(QMainWindow):
         self.image_popup_timer = QTimer(self)
         self.image_popup_timer.timeout.connect(self.show_image_popup)
         self.image_popup_timer.start(random.randint(5000, 20000))
+
+        self.freaky_mode_button = QPushButton("Freaky Mode")
+        self.freaky_mode_button.setCheckable(True)
+        self.freaky_mode_button.setStyleSheet("""
+            QPushButton {
+                background-color: #FF00FF;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 15px;
+                padding: 5px;
+                font-weight: bold;
+                font-size: 14px;
+                margin-right: 10px;
+            }
+            QPushButton:hover {
+                background-color: #FF69B4;
+            }
+            QPushButton:checked {
+                background-color: #FF4500;
+            }
+        """)
+        self.freaky_mode_button.setFixedSize(150, 30)
+        self.freaky_mode_button.clicked.connect(self.toggle_freaky_mode)
+        self.toolbar.insertWidget(self.toolbar.actions()[-2], self.freaky_mode_button)
+
+        self.freaky_mode_timer = QTimer(self)
+        self.freaky_mode_timer.timeout.connect(self.update_freaky_mode)
+
+        self.freaky_emojis = ["👅", "👄", "🍆", "🍑", "🔥", "💋"]
+        self.original_style = self.styleSheet()
+
+    def toggle_freaky_mode(self):
+        if self.freaky_mode_button.isChecked():
+            self.enable_freaky_mode()
+        else:
+            self.disable_freaky_mode()
+
+    def enable_freaky_mode(self):
+        self.freaky_mode_timer.start(200)
+        self.update_freaky_mode()
+
+    def disable_freaky_mode(self):
+        self.freaky_mode_timer.stop()
+        self.setStyleSheet(self.original_style)
+        for i in range(self.tabs.count()):
+            browser = self.tabs.widget(i).findChild(QWebEngineView)
+            browser.page().runJavaScript("document.body.style = ''; document.body.className = '';")
+        self.setCursor(Qt.ArrowCursor)
+
+    def update_freaky_mode(self):
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                background-color: {self.random_color()};
+                background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><text x="{random.randint(0, 100)}%" y="{random.randint(0, 100)}%" font-size="{random.randint(20, 100)}" fill="{self.random_color()}">{random.choice(self.freaky_emojis)}</text></svg>');
+            }}
+            QPushButton {{
+                color: {self.random_color()};
+                font-size: {random.randint(10, 40)}px;
+                transform: rotate({random.randint(-45, 45)}deg);
+                background-color: {self.random_color()};
+            }}
+            QLabel {{
+                font-size: {random.randint(12, 36)}px;
+                color: {self.random_color()};
+                transform: rotate({random.randint(-30, 30)}deg);
+            }}
+        """)
+        self.wobble_window()
+        self.flash_toolbar()
+        self.rotate_web_content()
+        self.change_web_fonts()
+        self.add_freaky_cursor()
+
+    def random_color(self):
+        return f"#{random.randint(0, 255):02x}{random.randint(0, 255):02x}{random.randint(0, 255):02x}"
+
+    def wobble_window(self):
+        current_pos = self.pos()
+        new_pos = current_pos + QPoint(random.randint(-30, 30), random.randint(-30, 30))
+        self.move(new_pos)
+
+    def flash_toolbar(self):
+        self.toolbar.setStyleSheet(f"background-color: {self.random_color()}; border: 3px solid {self.random_color()};")
+
+    def rotate_web_content(self):
+        for i in range(self.tabs.count()):
+            browser = self.tabs.widget(i).findChild(QWebEngineView)
+            rotation = random.randint(-10, 10)
+            scale = random.uniform(0.9, 1.1)
+            browser.page().runJavaScript(f"""
+                document.body.style.transform = 'rotate({rotation}deg) scale({scale})';
+                document.body.style.transition = 'transform 0.1s';
+                document.body.className = 'freaky-mode';
+            """)
+
+    def change_web_fonts(self):
+        fonts = ['Arial', 'Verdana', 'Helvetica', 'Times New Roman', 'Courier', 'Comic Sans MS', 'Impact', 'Papyrus', 'Wingdings']
+        for i in range(self.tabs.count()):
+            browser = self.tabs.widget(i).findChild(QWebEngineView)
+            font = random.choice(fonts)
+            color = self.random_color()
+            emoji = random.choice(self.freaky_emojis)
+            browser.page().runJavaScript(f"""
+                var style = document.createElement('style');
+                style.textContent = `
+                    body.freaky-mode * {{
+                        font-family: '{font}' !important;
+                        color: {color} !important;
+                    }}
+                    body.freaky-mode::after {{
+                        content: '{emoji}';
+                        position: fixed;
+                        top: {random.randint(0, 100)}%;
+                        left: {random.randint(0, 100)}%;
+                        font-size: {random.randint(20, 100)}px;
+                        z-index: 9999;
+                    }}
+                `;
+                document.head.appendChild(style);
+            """)
+
+    def add_freaky_cursor(self):
+        cursor_emoji = random.choice(self.freaky_emojis)
+        cursor_pixmap = self.emoji_to_pixmap(cursor_emoji)
+        if not cursor_pixmap.isNull():
+            self.setCursor(QCursor(cursor_pixmap))
+        else:
+            print(f"Failed to create cursor from emoji: {cursor_emoji}")
+
+    def emoji_to_pixmap(self, emoji):
+        image = QImage(32, 32, QImage.Format_ARGB32)
+        image.fill(Qt.transparent)
+        painter = QPainter(image)
+        painter.setFont(QFont("Noto Color Emoji", 24))
+        painter.drawText(image.rect(), Qt.AlignCenter, emoji)
+        painter.end()
+        return QPixmap.fromImage(image)
 
     def show_image_popup(self):
         self.image_popup.show()
