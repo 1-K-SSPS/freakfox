@@ -7,11 +7,13 @@ from PyQt5.QtGui import QIcon, QFont, QColor, QImage
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QToolBar, QAction, QLineEdit, 
     QTabWidget, QWidget, QVBoxLayout, QStatusBar, QPushButton,
-    QStyleFactory, QHBoxLayout, QDialog, QLabel, QDesktopWidget
+    QStyleFactory, QHBoxLayout, QDialog, QLabel, QDesktopWidget,
+    QComboBox
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QDoubleValidator
 import pygame
+import json
 
 class PopupDialog(QDialog):
     def __init__(self, parent=None):
@@ -25,15 +27,6 @@ class PopupDialog(QDialog):
         name = random.choice(["Anna", "Eva", "Katerina", "Lucie", "Petra", "Jana", "Martina", "Veronika", "Tereza", "Barbora", "Eliska", "Marie", "Zuzana", "Alena", "Marketa", "Klara", "Simona", "Kristyna", "Vítová", "Adolf Hitler", "Ondřej Jansta"])
         kids = random.randint(1, 15)
         distance = random.randint(1, 30)
-        prsy = random.choice([
-            "má prsy jako vesmírné balóny",
-            "má prsy placaté jak žehlicí prkno",
-            "má prsy asymetrické jako Picassův obraz",
-            "má schlong dlouhý jak hasičská hadice",
-            "má třetí prs na zádech",
-            "má kozy jak tři vozy",
-            "má normální prsy"
-        ])
         tlacidlo = random.choice([
             "Kontaktovat 📞",
             "Freakovat 💋",
@@ -71,15 +64,14 @@ class PopupDialog(QDialog):
             "vypadá jako by spadla z višně", "má tvář, která by mohla zastavit hodiny",
             "je tak ošklivá, že by mohla vystrašit i ducha", "má vzhled, který nelze zapomenout (bohužel)",
             "je esteticky náročná", "vypadá jako by ji někdo namaloval levou nohou",
-            "má obličej, který by mohl rozbít zrcadlo", "je vizuálně challenging",
-            "má vzhled, který testuje hranice krásy"
+            "má obličej, který by mohl rozbít zrcadlo", "má vzhled, který testuje hranice krásy"
         ])
 
         title = QLabel(f"{name}, {age} let")
         title.setStyleSheet("font-size: 18px; font-weight: bold;")
         layout.addWidget(title)
         
-        full_popup = f"Jen {distance}km od tvého domu, má {kids} {'dítě' if kids == 1 else 'děti' if kids in [2,3,4] else 'dětí'}, {vzhled}, {prsy} a {hleda}."
+        full_popup = f"Jen {distance}km od tvého domu, má {kids} {'dítě' if kids == 1 else 'děti' if kids in [2,3,4] else 'dětí'}, {vzhled} a {hleda}."
 
         content = QLabel(full_popup)
         content.setWordWrap(True)
@@ -168,7 +160,8 @@ class ImagePopup(QDialog):
             "freaky.mp3",
             "get-out-freakbob.mp3",
             "pickupthephone.mp3",
-            "ringtone.mp3"
+            "ringtone.mp3",
+            "olivovelahudky.mp3"
         ]
         self.sounds = {}
         for sound_file in self.sound_files:
@@ -199,66 +192,231 @@ class ImagePopup(QDialog):
         self.show_timer.start(random.randint(5000, 20000))  
         super().hideEvent(event)
 
-class GamblingMachine(QDialog):
+class SlotMachine(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Gambling Machine")
-        self.setFixedSize(300, 200)
+        self.setWindowTitle("Automat na štěstí")
+        self.setFixedSize(300, 300)
         
         layout = QVBoxLayout()
         
-        self.money = 100
-        self.money_label = QLabel(f"Your money: ${self.money}")
+        self.money = self.load_balance()
+        self.money_label = QLabel(f"Tvůj majetek: {self.money:.2f} Kč")
         layout.addWidget(self.money_label)
         
-        self.result_label = QLabel("Spin to play!")
+        self.result_label = QLabel("Zatáhni za páku a vyhraj!")
         layout.addWidget(self.result_label)
         
-        self.spin_button = QPushButton("Spin")
-        self.spin_button.clicked.connect(self.spin)
-        layout.addWidget(self.spin_button)
+        self.slot_display = QLabel("🎰 🎰 🎰")
+        self.slot_display.setAlignment(Qt.AlignCenter)
+        self.slot_display.setStyleSheet("font-size: 40px;")
+        layout.addWidget(self.slot_display)
+        
+        self.bet_input = QLineEdit()
+        self.bet_input.setPlaceholderText("Kolik chceš vsadit?")
+        self.bet_input.setValidator(QDoubleValidator(0, 1000000, 2, self))
+        layout.addWidget(self.bet_input)
+        
+        self.play_button = QPushButton("Vydělat miliardy 🍀")
+        self.play_button.clicked.connect(self.play_slot)
+        layout.addWidget(self.play_button)
         
         self.setLayout(layout)
         
         self.emojis = ["🍒", "🍋", "🍊", "🍇", "💎", "7️⃣"]
-        self.spinning = False
-        self.spin_timer = QTimer(self)
-        self.spin_timer.timeout.connect(self.update_spin_animation)
+        
+        self.animation_timer = QTimer(self)
+        self.animation_timer.timeout.connect(self.update_animation)
+        self.animation_count = 0
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.close_other_gambling_popups()
     
-    def spin(self):
-        if self.spinning:
+    def close_other_gambling_popups(self):
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, (SlotMachine, Roulette)) and widget != self:
+                widget.close()
+    
+    def load_balance(self):
+        if not os.path.exists("balance.txt"):
+            with open("balance.txt", "w") as f:
+                json.dump({"balance": 100.0}, f)
+        
+        with open("balance.txt", "r") as f:
+            data = json.load(f)
+
+        if isinstance(data, dict):
+            return max(data.get("balance", 100.0), 100.0)
+        else:
+            return 100.0
+
+    
+    def save_balance(self):
+        with open("balance.txt", "w") as f:
+            json.dump({"balance": max(self.money, 100.0)}, f)
+    
+    def play_slot(self):
+        bet = float(self.bet_input.text() or "0")
+        if bet <= 0 or bet > self.money:
+            self.result_label.setText("Tolik nemáš šašku!")
             return
         
-        if self.money <= 0:
-            self.result_label.setText("You're out of money!")
+        self.money -= bet
+        self.save_balance()
+        
+        self.play_button.setEnabled(False)
+        self.animation_count = 0
+        self.animation_timer.start(100)
+    
+    def update_animation(self):
+        self.animation_count += 1
+        self.slot_display.setText(" ".join(random.choices(self.emojis, k=3)))
+        
+        if self.animation_count >= 20:
+            self.animation_timer.stop()
+            self.show_result()
+    
+    def show_result(self):
+        if random.random() < 0.55:  
+            winning_symbol = random.choice(self.emojis)
+            result = [winning_symbol] * 3
+        else:
+            result = random.choices(self.emojis, k=3)
+        
+        self.slot_display.setText(" ".join(result))
+        
+        if len(set(result)) == 1:  
+            winnings = float(self.bet_input.text()) * 2
+            self.money += winnings
+            self.result_label.setText(f"Vyhráls {winnings:.2f} Kč!\nNepřestávej!")
+        else:
+            self.result_label.setText(f"Smůla, projels {float(self.bet_input.text()):.2f} Kč!")
+        
+        if self.money < 100:
+            self.money = 100.0
+            self.result_label.setText("Prohráls všechno! Tady máš\n stovku na rozjezd!")
+        
+        self.money_label.setText(f"Tvůj majetek: {self.money:.2f} Kč")
+        self.save_balance()
+        self.play_button.setEnabled(True)
+
+class Roulette(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Ruleta")
+        self.setFixedSize(300, 300)
+        
+        layout = QVBoxLayout()
+        
+        self.money = self.load_balance()
+        self.money_label = QLabel(f"Tvůj majetek: {self.money:.2f} Kč")
+        layout.addWidget(self.money_label)
+        
+        self.result_label = QLabel("Vsaď si a vyhraj!")
+        layout.addWidget(self.result_label)
+        
+        self.wheel_display = QLabel("🎰")
+        self.wheel_display.setAlignment(Qt.AlignCenter)
+        self.wheel_display.setStyleSheet("font-size: 60px;")
+        layout.addWidget(self.wheel_display)
+        
+        self.bet_input = QLineEdit()
+        self.bet_input.setPlaceholderText("Kolik chceš vsadit?")
+        self.bet_input.setValidator(QDoubleValidator(0, 1000000, 2, self))
+        layout.addWidget(self.bet_input)
+        
+        self.color_choice = QComboBox()
+        self.color_choice.addItems(["Červená", "Černá"])
+        layout.addWidget(self.color_choice)
+        
+        self.play_button = QPushButton("Roztočit")
+        self.play_button.clicked.connect(self.play_roulette)
+        layout.addWidget(self.play_button)
+        
+        self.setLayout(layout)
+        
+        self.roulette_numbers = list(range(37))
+        self.roulette_colors = ["červená" if i % 2 else "černá" for i in range(1, 37)]
+        self.roulette_colors.insert(0, "zelená")
+        
+        self.animation_timer = QTimer(self)
+        self.animation_timer.timeout.connect(self.update_animation)
+        self.animation_count = 0
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.close_other_gambling_popups()
+    
+    def close_other_gambling_popups(self):
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, (SlotMachine, Roulette)) and widget != self:
+                widget.close()
+    
+    def load_balance(self):
+        if not os.path.exists("balance.txt"):
+            with open("balance.txt", "w") as f:
+                json.dump({"balance": 100.0}, f)
+        with open("balance.txt", "r") as f:
+            data = json.load(f)
+        return max(float(data.get("balance", 100.0)), 100.0)
+    
+    def save_balance(self):
+        with open("balance.txt", "w") as f:
+            json.dump({"balance": max(self.money, 100.0)}, f)
+    
+    def play_roulette(self):
+        bet = float(self.bet_input.text() or "0")
+        if bet <= 0 or bet > self.money:
+            self.result_label.setText("Tolik nemáš šašku")
             return
         
-        self.spinning = True
-        self.spin_button.setText("Spinning...")
-        self.spin_button.setEnabled(False)
+        self.money -= bet
+        self.save_balance()
         
-        self.money -= 10
-        self.spin_count = 0
-        self.spin_timer.start(100)
+        self.play_button.setEnabled(False)
+        self.animation_count = 0
+        self.animation_timer.start(100)
     
-    def update_spin_animation(self):
-        self.spin_count += 1
-        emoji_text = " ".join(random.choices(self.emojis, k=3))
-        self.result_label.setText(emoji_text)
+    def update_animation(self):
+        self.animation_count += 1
+        if self.animation_count % 2 == 0:
+            self.wheel_display.setText("■")
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: #333333;")
+        else:
+            self.wheel_display.setText("■")
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: red;")
         
-        if self.spin_count >= 20:
-            self.spin_timer.stop()
-            self.spinning = False
-            self.spin_button.setText("Spin")
-            self.spin_button.setEnabled(True)
-            
-            if random.random() < 0.6:
-                self.money += 20
-                self.result_label.setText(f"{emoji_text}\nYou won $10!")
-            else:
-                self.result_label.setText(f"{emoji_text}\nYou lost $10!")
-            
-            self.money_label.setText(f"Your money: ${self.money}")
+        if self.animation_count >= 20:
+            self.animation_timer.stop()
+            self.show_result()
+    
+    def show_result(self):
+        result = random.choice(self.roulette_numbers)
+        result_color = self.roulette_colors[result]
+        
+        self.wheel_display.setText(str(result))
+        if result_color == "červená":
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: red;")
+        elif result_color == "černá":
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: #333333;")
+        else:
+            self.wheel_display.setStyleSheet("font-size: 60px; color: green; background-color: white;")
+        
+        if random.random() < 0.55: 
+            winnings = float(self.bet_input.text()) * 2
+            self.money += winnings
+            self.result_label.setText(f"Koule padla na {result} ({result_color})\nVyhráls {winnings:.2f} Kč!")
+        else:
+            self.result_label.setText(f"Koule padla na {result} ({result_color})\nPřišels o {float(self.bet_input.text()):.2f} Kč!")
+        
+        if self.money < 100:
+            self.money = 100.0
+            self.result_label.setText("Projels všechno, tady máš\n stovku na rozjezd!")
+        
+        self.money_label.setText(f"Tvůj majetek: {self.money:.2f} Kč")
+        self.save_balance()
+        self.play_button.setEnabled(True)
 
 class Browser(QMainWindow):
     def __init__(self):
@@ -293,8 +451,8 @@ class Browser(QMainWindow):
         
         self.current_search_engine = "file://" + os.path.abspath(os.path.join(os.path.dirname(__file__), "index.html"))
         
-        self.gambling_button = QPushButton("Gambling")
-        self.gambling_button.setStyleSheet("""
+        self.slot_machine_button = QPushButton("Slot")
+        self.slot_machine_button.setStyleSheet("""
             QPushButton {
                 background-color: #808080;
                 color: #FFFFFF;
@@ -308,9 +466,15 @@ class Browser(QMainWindow):
                 background-color: #A9A9A9;
             }
         """)
-        self.gambling_button.clicked.connect(self.open_gambling_machine)
-        self.gambling_button.setFixedSize(100, 30)
-        self.toolbar.addWidget(self.gambling_button)
+        self.slot_machine_button.clicked.connect(self.open_slot_machine)
+        self.slot_machine_button.setFixedSize(100, 30)
+        self.toolbar.addWidget(self.slot_machine_button)
+        
+        self.roulette_button = QPushButton("Roulette")
+        self.roulette_button.setStyleSheet(self.slot_machine_button.styleSheet())
+        self.roulette_button.clicked.connect(self.open_roulette)
+        self.roulette_button.setFixedSize(100, 30)
+        self.toolbar.addWidget(self.roulette_button)
         
         url_bar_container = QWidget()
         url_bar_layout = QHBoxLayout(url_bar_container)
@@ -524,7 +688,7 @@ class Browser(QMainWindow):
         self.add_new_tab(QUrl("https://downloadmoreram.com/"))
 
     def redirect_to_idiot(self):
-        self.add_new_tab(QUrl("https://youareanidiot.cc/"))
+        self.add_new_tab(QUrl("https://you-are-idiot.github.io/"))
 
     def newtab(self):
         self.add_new_tab(QUrl(self.current_search_engine))
@@ -568,9 +732,13 @@ class Browser(QMainWindow):
             self.image_popup_timer.start(random.randint(5000, 20000))
             self.popup_disabler.setText("Disable Popups")
 
-    def open_gambling_machine(self):
-        gambling_machine = GamblingMachine(self)
-        gambling_machine.show()
+    def open_slot_machine(self):
+        slot_machine = SlotMachine(self)
+        slot_machine.show()
+
+    def open_roulette(self):
+        roulette = Roulette(self)
+        roulette.show()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
