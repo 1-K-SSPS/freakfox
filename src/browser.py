@@ -3,13 +3,15 @@ import os
 import re
 import random
 from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint
-from PyQt5.QtGui import QIcon, QFont, QColor
+from PyQt5.QtGui import QIcon, QFont, QColor, QImage
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QToolBar, QAction, QLineEdit, 
     QTabWidget, QWidget, QVBoxLayout, QStatusBar, QPushButton,
     QStyleFactory, QHBoxLayout, QDialog, QLabel, QDesktopWidget
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
+from PyQt5.QtGui import QPixmap
+import pygame
 
 class PopupDialog(QDialog):
     def __init__(self, parent=None):
@@ -29,6 +31,7 @@ class PopupDialog(QDialog):
             "má prsy asymetrické jako Picassův obraz",
             "má schlong dlouhý jak hasičská hadice",
             "má třetí prs na zádech",
+            "má kozy jak tři vozy",
             "má normální prsy"
         ])
         tlacidlo = random.choice([
@@ -134,6 +137,58 @@ class PopupDialog(QDialog):
         self.move(x, y)
 
         super().showEvent(event)
+
+class ImagePopup(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        script_path = os.path.abspath(__file__)
+        full_dir_path = os.path.dirname(script_path)
+        image_path = os.path.join(full_dir_path, "freakbob.jpg")
+        
+        image_label = QLabel(self)
+        image = QImage(image_path)
+        if image.isNull():
+            print(f"Error: Could not load image at path: {image_path}")
+        else:
+            pixmap = QPixmap.fromImage(image)
+            image_label.setPixmap(pixmap)
+            self.setFixedSize(pixmap.width(), pixmap.height())
+        
+        layout.addWidget(image_label)
+        self.setLayout(layout)
+
+        pygame.mixer.init()
+        sound_path = os.path.join(full_dir_path, "freaky.ogg")
+        self.sound = pygame.mixer.Sound(sound_path)
+
+        self.hide_timer = QTimer(self)
+        self.hide_timer.timeout.connect(self.hide)
+        
+        self.show_timer = QTimer(self)
+        self.show_timer.timeout.connect(self.show)
+        self.show_timer.start(random.randint(5000, 20000)) 
+        
+    def showEvent(self, event):
+        screen = QDesktopWidget().screenNumber(QDesktopWidget().cursor().pos())
+        screen_geometry = QDesktopWidget().screenGeometry(screen)
+        
+        x = min(screen_geometry.width() - self.width(), max(0, (screen_geometry.width() - self.width()) // 2))
+        y = min(screen_geometry.height() - self.height(), max(0, (screen_geometry.height() - self.height()) // 2))
+        
+        self.move(x, y)
+        self.sound.play()
+        self.hide_timer.start(1000) 
+        super().showEvent(event)
+        
+    def hideEvent(self, event):
+        self.show_timer.start(random.randint(5000, 20000))  
+        super().hideEvent(event)
 
 class Browser(QMainWindow):
     def __init__(self):
@@ -244,7 +299,16 @@ class Browser(QMainWindow):
         self.popup_timer = QTimer(self)
         self.popup_timer.timeout.connect(self.show_popup)
         self.popup_timer.start(timer)
-    
+
+        self.image_popup = ImagePopup(self)
+        self.image_popup_timer = QTimer(self)
+        self.image_popup_timer.timeout.connect(self.show_image_popup)
+        self.image_popup_timer.start(random.randint(5000, 20000))
+
+    def show_image_popup(self):
+        self.image_popup.show()
+        self.image_popup_timer.start(random.randint(5000, 20000))
+
     def show_popup(self):
         popup = PopupDialog(self)
         popup.show()
@@ -304,7 +368,7 @@ class Browser(QMainWindow):
         browser_layout.addWidget(browser)
         
         layout.addWidget(browser_widget)
-        
+
         button_widget = QWidget()
         button_layout = QHBoxLayout(button_widget)
         button_layout.setContentsMargins(0, 0, 0, 10)
@@ -409,11 +473,12 @@ class Browser(QMainWindow):
     def toggle_popup(self):
         if self.popup_disabler.isChecked():
             self.popup_timer.stop()
+            self.image_popup_timer.stop()
             self.popup_disabler.setText("Enable Popups")
         else:
             self.popup_timer.start(random.randint(2500, 10000))
+            self.image_popup_timer.start(random.randint(5000, 20000))
             self.popup_disabler.setText("Disable Popups")
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
