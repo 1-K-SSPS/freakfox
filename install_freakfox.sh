@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Install script for Freakfox
 echo " "
 echo "This script is meant for Arch Linux, Debian-based distros, Fedora, or macOS."
 echo " "
@@ -91,12 +90,18 @@ install_packages() {
     elif [[ $distro == "macos" ]]; then
         echo "It seems you're using macOS."
         echo "Choose an option:"
-        echo "1 - Install Python and Pip using brew"
+        echo "1 - Install Python, Pip, and Homebrew"
         echo "n - Skip this step"
 
         read -r option
         case $option in
             1)
+                # Check if Homebrew is installed
+                if ! command -v brew &> /dev/null; then
+                    echo "Installing Homebrew..."
+                    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "Failed to install Homebrew"; exit 1; }
+                fi
+                
                 brew install python3 || { echo "Failed to install Python"; exit 1; }
                 pip3 install PyQt5 PyQtWebEngine pygame || { echo "Failed to install Python dependencies"; exit 1; }
                 ;;
@@ -154,8 +159,43 @@ cp src/* "$INSTALL_DIR/" || { echo "Failed to copy source files"; exit 1; }
 echo "Installing necessary Python libraries..."
 pip3 install -r requirements.txt || { echo "Failed to install Python libraries"; exit 1; }
 
-echo "Creating app launcher entry..."
-cat > ~/.local/share/applications/freakfox.desktop << EOL
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    APPS_DIR="$HOME/Applications"
+    mkdir -p "$APPS_DIR"
+    
+    echo "Creating app launcher for macOS..."
+    mkdir -p "$APPS_DIR/Freakfox.app/Contents/MacOS"
+    mkdir -p "$APPS_DIR/Freakfox.app/Contents/Resources"
+    
+    cat > "$APPS_DIR/Freakfox.app/Contents/Info.plist" << EOL
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>Freakfox</string>
+    <key>CFBundleIconFile</key>
+    <string>freakfox_icon.png</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.freakfox.app</string>
+    <key>CFBundleName</key>
+    <string>Freakfox</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+</dict>
+</plist>
+EOL
+
+    cat > "$APPS_DIR/Freakfox.app/Contents/MacOS/Freakfox" << EOL
+#!/bin/bash
+python3 $INSTALL_DIR/browser.py
+EOL
+    chmod +x "$APPS_DIR/Freakfox.app/Contents/MacOS/Freakfox"
+
+    cp "$INSTALL_DIR/freakfox_icon.png" "$APPS_DIR/Freakfox.app/Contents/Resources/"
+else
+    echo "Creating app launcher entry..."
+    cat > ~/.local/share/applications/freakfox.desktop << EOL
 [Desktop Entry]
 Name=Freakfox
 Exec=python3 $INSTALL_DIR/browser.py
@@ -164,6 +204,7 @@ Type=Application
 Terminal=false
 Categories=GNOME;GTK;Network;WebBrowser;
 EOL
+fi
 
 echo " "
 echo "Freakfox was successfully installed into $INSTALL_DIR"
