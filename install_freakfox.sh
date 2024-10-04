@@ -203,6 +203,7 @@ Icon=$INSTALL_DIR/freakfox_icon.png
 Type=Application
 Terminal=false
 Categories=GNOME;GTK;Network;WebBrowser;
+Path=$INSTALL_DIR
 EOL
 fi
 
