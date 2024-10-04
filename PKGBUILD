@@ -6,7 +6,6 @@ url="http://spatula.net/software/sex/"
 license=('freakyGPL')
 depends=(python
     'python-pip'
-    'python-virtualenv'
     'python-pyqt5'
     'python-pyqt5-webengine'
     'python-pygame'
