@@ -11,7 +11,7 @@ Linux-only browser, Windows stojí za nic.
 chmod +x install_freakfox.sh
 ./install_freakfox.sh
 ```
-Nebo pokud používáte Arch můžete freakfox nainstalovat přímo z AURu:
+Arch:
 ```
 yay -S freakfox-git
 ```
