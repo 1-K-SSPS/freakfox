@@ -29,6 +29,7 @@ Dependencies: Nic, script vše nainstaluje
 - App launcher entry
 - Freakbob náhodně začne volat
 - Inbuilt gambling
+- Freakymode
 
 ## Proč si vybrat právě freakfox?
  - Silena bezpecnost (funguje tak malo veci ze ani prokliky na reklamy nefunguji (neni to bug, je to feature) browser nikam nic neposila a nic neuklada (taky neni bug, je to feature))
