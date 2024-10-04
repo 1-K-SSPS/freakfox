@@ -16,6 +16,19 @@ makedepends=()
 source=("git+https://github.com/1-K-SSPS/freakfox")
 md5sums=(SKIP)
 
+prepare() {
+    cd "${srcdir}/${pkgname}/src"
+    cat >freakfox.desktop << EOL
+[Desktop Entry]
+Name=Freakfox
+Exec=bash -c "source $INSTALL_DIR/venv/bin/activate && python3 $INSTALL_DIR/browser.py && deactivate"
+Icon=$INSTALL_DIR/freakfox_icon.png
+Type=Application
+Terminal=false
+Categories=GNOME;GTK;Network;WebBrowser;
+Path=$INSTALL_DIR
+EOL
+}
 package() {
     cd "${srcdir}/${pkgname}/src"
     cat > freakfox << EOL
