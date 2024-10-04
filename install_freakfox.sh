@@ -33,11 +33,11 @@ install_packages() {
 
             ;;
         2)
-            sudo pacman -S python python-pip python-virtualenv python-pyqt5 python-pyqt5-webengine python-pygame --noconfirm --needed || { echo "Failed to install Python"; exit 1; }
+            sudo pacman -S python python-pip python-pyqt5 python-pyqt5-webengine python-pygame --noconfirm --needed || { echo "Failed to install Python"; exit 1; }
 
             ;;
         a)
-            sudo pacman -S wofi python python-pip python-virtualenv python-pyqt5 python-pyqt5-webengine python-pygame --noconfirm --needed || { echo "Failed to install packages"; exit 1; }
+            sudo pacman -S wofi python python-pip python-pyqt5 python-pyqt5-webengine python-pygame --noconfirm --needed || { echo "Failed to install packages"; exit 1; }
 
             ;;
         n)
@@ -177,6 +177,7 @@ curl -o "$INSTALL_DIR/duckduckgo_icon.png" "https://logodix.com/logo/48308.png" 
 
 echo "Copying source files..."
 cp src/* "$INSTALL_DIR/" || { echo "Failed to copy source files"; exit 1; }
+chmod +x $INSTALL_DIR/browser.py
 
 
 
@@ -218,11 +219,16 @@ EOL
 
     cp "$INSTALL_DIR/freakfox_icon.png" "$APPS_DIR/Freakfox.app/Contents/Resources/"
 else
+    if grep -q "Arch" /etc/os-release || grep -q "Debian" /etc/os-release; then
+        EXEC_COMMAND="$INSTALL_DIR/browser.py"
+    else
+        EXEC_COMMAND="bash -c "source $INSTALL_DIR/venv/bin/activate && python3 $INSTALL_DIR/browser.py && deactivate""
+    fi
     echo "Creating app launcher entry..."
     cat >~/.local/share/applications/freakfox.desktop << EOL
 [Desktop Entry]
 Name=Freakfox
-Exec=bash -c "source $INSTALL_DIR/venv/bin/activate && python3 $INSTALL_DIR/browser.py && deactivate"
+Exec=$EXEC_COMMAND
 Icon=$INSTALL_DIR/freakfox_icon.png
 Type=Application
 Terminal=false
