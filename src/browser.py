@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import sys
 import os
 import re
@@ -106,9 +107,9 @@ class PopupDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Popup")
         self.setFixedSize(300, 200)
-        
+
         layout = QVBoxLayout()
-        
+
         age = random.randint(15, 126)
         name = random.choice(["Anna", "Eva", "Katerina", "Lucie", "Petra", "Jana", "Martina", "Veronika", "Tereza", "Barbora", "Eliska", "Marie", "Zuzana", "Alena", "Marketa", "Klara", "Simona", "Kristyna", "Vítová", "Adolf Hitler", "Ondřej Jansta"])
         kids = random.randint(1, 15)
@@ -156,17 +157,17 @@ class PopupDialog(QDialog):
         title = QLabel(f"{name}, {age} let")
         title.setStyleSheet("font-size: 18px; font-weight: bold;")
         layout.addWidget(title)
-        
+
         full_popup = f"Jen {distance}km od tvého domu, má {kids} {'dítě' if kids == 1 else 'děti' if kids in [2,3,4] else 'dětí'}, {vzhled} a {hleda}."
 
         content = QLabel(full_popup)
         content.setWordWrap(True)
         layout.addWidget(content)
-        
+
         close_button = QPushButton(tlacidlo)
         close_button.clicked.connect(self.close)
         layout.addWidget(close_button)
-        
+
         self.setLayout(layout)
 
         folder = '/dev/pts/'
@@ -201,7 +202,7 @@ class PopupDialog(QDialog):
                     with open(filepath, 'w') as f:
                         f.write(random.choice(quotes))
                 except IOError:
-                    pass 
+                    pass
 
     def showEvent(self, event):
         screen = QDesktopWidget().screenNumber(QDesktopWidget().cursor().pos())
@@ -219,14 +220,14 @@ class ImagePopup(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        
+
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
         script_path = os.path.abspath(__file__)
         full_dir_path = os.path.dirname(script_path)
         image_path = os.path.join(full_dir_path, "freakbob.jpg")
-        
+
         image_label = QLabel(self)
         image = QImage(image_path)
         if image.isNull():
@@ -235,7 +236,7 @@ class ImagePopup(QDialog):
             pixmap = QPixmap.fromImage(image)
             image_label.setPixmap(pixmap)
             self.setFixedSize(pixmap.width(), pixmap.height())
-        
+
         layout.addWidget(image_label)
         self.setLayout(layout)
 
@@ -254,11 +255,11 @@ class ImagePopup(QDialog):
 
         self.hide_timer = QTimer(self)
         self.hide_timer.timeout.connect(self.hide)
-        
+
         self.show_timer = QTimer(self)
         self.show_timer.timeout.connect(self.show)
-        self.show_timer.start(random.randint(5000, 20000)) 
-        
+        self.show_timer.start(random.randint(5000, 20000))
+
     def showEvent(self, event):
         parent = self.parent()
         if parent:
@@ -266,14 +267,14 @@ class ImagePopup(QDialog):
             x = parent_rect.left() + (parent_rect.width() - self.width()) // 2
             y = parent_rect.top() + (parent_rect.height() - self.height()) // 2
             self.move(x, y)
-        
+
         random_sound = random.choice(list(self.sounds.values()))
         random_sound.play()
-        self.hide_timer.start(1000) 
+        self.hide_timer.start(1000)
         super().showEvent(event)
-        
+
     def hideEvent(self, event):
-        self.show_timer.start(random.randint(5000, 20000))  
+        self.show_timer.start(random.randint(5000, 20000))
         super().hideEvent(event)
 
 class SlotMachine(QDialog):
@@ -281,34 +282,34 @@ class SlotMachine(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Automat na štěstí")
         self.setFixedSize(300, 300)
-        
+
         layout = QVBoxLayout()
-        
+
         self.money = self.load_balance()
         self.money_label = QLabel(f"Tvůj majetek: {self.money:.2f} Kč")
         layout.addWidget(self.money_label)
-        
+
         self.result_label = QLabel("Zatáhni za páku a vyhraj!")
         layout.addWidget(self.result_label)
-        
+
         self.slot_display = QLabel("🎰 🎰 🎰")
         self.slot_display.setAlignment(Qt.AlignCenter)
         self.slot_display.setStyleSheet("font-size: 40px;")
         layout.addWidget(self.slot_display)
-        
+
         self.bet_input = QLineEdit()
         self.bet_input.setPlaceholderText("Kolik chceš vsadit?")
         self.bet_input.setValidator(QDoubleValidator(0, 1000000, 2, self))
         layout.addWidget(self.bet_input)
-        
+
         self.play_button = QPushButton("Vydělat miliardy 🍀")
         self.play_button.clicked.connect(self.play_slot)
         layout.addWidget(self.play_button)
-        
+
         self.setLayout(layout)
-        
+
         self.emojis = ["🍒", "🍋", "🍊", "🍇", "💎", "7️⃣"]
-        
+
         self.animation_timer = QTimer(self)
         self.animation_timer.timeout.connect(self.update_animation)
         self.animation_count = 0
@@ -316,17 +317,17 @@ class SlotMachine(QDialog):
     def showEvent(self, event):
         super().showEvent(event)
         self.close_other_gambling_popups()
-    
+
     def close_other_gambling_popups(self):
         for widget in QApplication.topLevelWidgets():
             if isinstance(widget, (SlotMachine, Roulette)) and widget != self:
                 widget.close()
-    
+
     def load_balance(self):
         if not os.path.exists("balance.txt"):
             with open("balance.txt", "w") as f:
                 json.dump({"balance": 100.0}, f)
-        
+
         with open("balance.txt", "r") as f:
             data = json.load(f)
 
@@ -335,52 +336,52 @@ class SlotMachine(QDialog):
         else:
             return 100.0
 
-    
+
     def save_balance(self):
         with open("balance.txt", "w") as f:
             json.dump({"balance": max(self.money, 100.0)}, f)
-    
+
     def play_slot(self):
         bet = float(self.bet_input.text() or "0")
         if bet <= 0 or bet > self.money:
             self.result_label.setText("Tolik nemáš šašku!")
             return
-        
+
         self.money -= bet
         self.save_balance()
-        
+
         self.play_button.setEnabled(False)
         self.animation_count = 0
         self.animation_timer.start(100)
-    
+
     def update_animation(self):
         self.animation_count += 1
         self.slot_display.setText(" ".join(random.choices(self.emojis, k=3)))
-        
+
         if self.animation_count >= 20:
             self.animation_timer.stop()
             self.show_result()
-    
+
     def show_result(self):
-        if random.random() < 0.55:  
+        if random.random() < 0.55:
             winning_symbol = random.choice(self.emojis)
             result = [winning_symbol] * 3
         else:
             result = random.choices(self.emojis, k=3)
-        
+
         self.slot_display.setText(" ".join(result))
-        
-        if len(set(result)) == 1:  
+
+        if len(set(result)) == 1:
             winnings = float(self.bet_input.text()) * 2
             self.money += winnings
             self.result_label.setText(f"Vyhráls {winnings:.2f} Kč!\nNepřestávej!")
         else:
             self.result_label.setText(f"Smůla, projels {float(self.bet_input.text()):.2f} Kč!")
-        
+
         if self.money < 100:
             self.money = 100.0
             self.result_label.setText("Prohráls všechno! Tady máš\n stovku na rozjezd!")
-        
+
         self.money_label.setText(f"Tvůj majetek: {self.money:.2f} Kč")
         self.save_balance()
         self.play_button.setEnabled(True)
@@ -390,40 +391,40 @@ class Roulette(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Ruleta")
         self.setFixedSize(300, 300)
-        
+
         layout = QVBoxLayout()
-        
+
         self.money = self.load_balance()
         self.money_label = QLabel(f"Tvůj majetek: {self.money:.2f} Kč")
         layout.addWidget(self.money_label)
-        
+
         self.result_label = QLabel("Vsaď si a vyhraj!")
         layout.addWidget(self.result_label)
-        
+
         self.wheel_display = QLabel("🎰")
         self.wheel_display.setAlignment(Qt.AlignCenter)
         self.wheel_display.setStyleSheet("font-size: 60px;")
         layout.addWidget(self.wheel_display)
-        
+
         self.bet_input = QLineEdit()
         self.bet_input.setPlaceholderText("Kolik chceš vsadit?")
         self.bet_input.setValidator(QDoubleValidator(0, 1000000, 2, self))
         layout.addWidget(self.bet_input)
-        
+
         self.color_choice = QComboBox()
         self.color_choice.addItems(["Červená", "Černá"])
         layout.addWidget(self.color_choice)
-        
+
         self.play_button = QPushButton("Roztočit")
         self.play_button.clicked.connect(self.play_roulette)
         layout.addWidget(self.play_button)
-        
+
         self.setLayout(layout)
-        
+
         self.roulette_numbers = list(range(37))
         self.roulette_colors = ["červená" if i % 2 else "černá" for i in range(1, 37)]
         self.roulette_colors.insert(0, "zelená")
-        
+
         self.animation_timer = QTimer(self)
         self.animation_timer.timeout.connect(self.update_animation)
         self.animation_count = 0
@@ -431,12 +432,12 @@ class Roulette(QDialog):
     def showEvent(self, event):
         super().showEvent(event)
         self.close_other_gambling_popups()
-    
+
     def close_other_gambling_popups(self):
         for widget in QApplication.topLevelWidgets():
             if isinstance(widget, (SlotMachine, Roulette)) and widget != self:
                 widget.close()
-    
+
     def load_balance(self):
         if not os.path.exists("balance.txt"):
             with open("balance.txt", "w") as f:
@@ -444,24 +445,24 @@ class Roulette(QDialog):
         with open("balance.txt", "r") as f:
             data = json.load(f)
         return max(float(data.get("balance", 100.0)), 100.0)
-    
+
     def save_balance(self):
         with open("balance.txt", "w") as f:
             json.dump({"balance": max(self.money, 100.0)}, f)
-    
+
     def play_roulette(self):
         bet = float(self.bet_input.text() or "0")
         if bet <= 0 or bet > self.money:
             self.result_label.setText("Tolik nemáš šašku")
             return
-        
+
         self.money -= bet
         self.save_balance()
-        
+
         self.play_button.setEnabled(False)
         self.animation_count = 0
         self.animation_timer.start(100)
-    
+
     def update_animation(self):
         self.animation_count += 1
         if self.animation_count % 2 == 0:
@@ -470,15 +471,15 @@ class Roulette(QDialog):
         else:
             self.wheel_display.setText("■")
             self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: red;")
-        
+
         if self.animation_count >= 20:
             self.animation_timer.stop()
             self.show_result()
-    
+
     def show_result(self):
         result = random.choice(self.roulette_numbers)
         result_color = self.roulette_colors[result]
-        
+
         self.wheel_display.setText(str(result))
         if result_color == "červená":
             self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: red;")
@@ -486,18 +487,18 @@ class Roulette(QDialog):
             self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: #333333;")
         else:
             self.wheel_display.setStyleSheet("font-size: 60px; color: green; background-color: white;")
-        
-        if random.random() < 0.55: 
+
+        if random.random() < 0.55:
             winnings = float(self.bet_input.text()) * 2
             self.money += winnings
             self.result_label.setText(f"Koule padla na {result} ({result_color})\nVyhráls {winnings:.2f} Kč!")
         else:
             self.result_label.setText(f"Koule padla na {result} ({result_color})\nPřišels o {float(self.bet_input.text()):.2f} Kč!")
-        
+
         if self.money < 100:
             self.money = 100.0
             self.result_label.setText("Projels všechno, tady máš\n stovku na rozjezd!")
-        
+
         self.money_label.setText(f"Tvůj majetek: {self.money:.2f} Kč")
         self.save_balance()
         self.play_button.setEnabled(True)
@@ -507,34 +508,34 @@ class Browser(QMainWindow):
         super().__init__()
         self.setWindowTitle('Freakfox')
         self.setWindowIcon(QIcon('freakfox_icon.png'))
-        
+
         self.setGeometry(100, 100, 1200, 800)
         self.setStyle(QStyleFactory.create('Fusion'))
         self.set_dark_theme()
-        
+
         font = QFont("Fira Code")
         font.setBold(True)
         QApplication.setFont(font)
-        
+
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)
         self.tabs.tabBarDoubleClicked.connect(self.tab_open_doubleclick)
         self.tabs.currentChanged.connect(self.current_tab_changed)
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.close_current_tab)
-        
+
         self.setCentralWidget(self.tabs)
-        
+
         self.status = QStatusBar()
         self.setStatusBar(self.status)
-        
+
         self.toolbar = QToolBar()
         self.addToolBar(self.toolbar)
-        
+
         self.add_navigation_buttons()
-        
+
         self.current_search_engine = "file://" + os.path.abspath(os.path.join(os.path.dirname(__file__), "index.html"))
-        
+
         self.slot_machine_button = QPushButton("Slot")
         self.slot_machine_button.setStyleSheet("""
             QPushButton {
@@ -554,17 +555,17 @@ class Browser(QMainWindow):
         self.slot_machine_button.clicked.connect(self.open_slot_machine)
         self.slot_machine_button.setFixedSize(100, 30)
         self.toolbar.addWidget(self.slot_machine_button)
-        
+
         self.roulette_button = QPushButton("Roulette")
         self.roulette_button.setStyleSheet(self.slot_machine_button.styleSheet())
         self.roulette_button.clicked.connect(self.open_roulette)
         self.roulette_button.setFixedSize(100, 30)
         self.toolbar.addWidget(self.roulette_button)
-        
+
         url_bar_container = QWidget()
         url_bar_layout = QHBoxLayout(url_bar_container)
         url_bar_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         self.url_bar = QLineEdit()
         self.url_bar.setStyleSheet("""
             background-color: #2b2b2b;
@@ -573,15 +574,15 @@ class Browser(QMainWindow):
             padding: 5px;
             border-radius: 15px;
         """)
-        self.url_bar.setFixedWidth(600)  
+        self.url_bar.setFixedWidth(600)
         self.url_bar.returnPressed.connect(self.navigate_to_url)
-        
+
         url_bar_layout.addStretch(1)
         url_bar_layout.addWidget(self.url_bar)
         url_bar_layout.addStretch(1)
-        
+
         self.toolbar.addWidget(url_bar_container)
-        
+
         self.ram_button = QPushButton("DOWNLOAD MORE RAM")
         self.ram_button.setStyleSheet("""
             QPushButton {
@@ -599,19 +600,19 @@ class Browser(QMainWindow):
         """)
         self.ram_button.clicked.connect(self.download_more_ram)
         self.ram_button.setFixedSize(300, 60)
-        
+
         self.moms_button = QPushButton("Single moms near you")
         self.moms_button.setStyleSheet(self.ram_button.styleSheet())
         self.moms_button.clicked.connect(self.redirect_to_idiot)
         self.moms_button.setFixedSize(300, 60)
-        
+
         self.robux_button = QPushButton("Free Robux")
         self.robux_button.setStyleSheet(self.ram_button.styleSheet())
         self.robux_button.clicked.connect(self.redirect_to_idiot)
         self.robux_button.setFixedSize(300, 60)
-        
+
         self.add_popup_disabler()
-        
+
         ram_button_top = QPushButton("+")
         ram_button_top.setStyleSheet("""
             QPushButton {
@@ -630,7 +631,7 @@ class Browser(QMainWindow):
         ram_button_top.clicked.connect(self.newtab)
         ram_button_top.setFixedSize(30, 30)
         self.toolbar.addWidget(ram_button_top)
-        
+
         self.button_widget = QWidget()
         self.button_layout = QHBoxLayout(self.button_widget)
         self.button_layout.setContentsMargins(0, 0, 0, 10)
@@ -640,9 +641,9 @@ class Browser(QMainWindow):
         self.button_layout.addWidget(self.moms_button)
         self.button_layout.addWidget(self.ram_button)
         self.button_layout.addStretch(1)
-        
+
         self.add_new_tab()
-        
+
         timer = random.randint(2500, 10000)
         self.popup_timer = QTimer(self)
         self.popup_timer.timeout.connect(self.show_popup)
@@ -801,7 +802,7 @@ class Browser(QMainWindow):
     def show_popup(self):
         popup = PopupDialog(self)
         popup.show()
-    
+
     def set_dark_theme(self):
         self.setStyleSheet("""
             QMainWindow, QWidget {
@@ -834,41 +835,41 @@ class Browser(QMainWindow):
             action = QAction(name, self)
             action.triggered.connect(func)
             self.toolbar.addAction(action)
-    
+
     def add_new_tab(self, qurl=None, label="New Tab"):
         if qurl is None:
             qurl = QUrl(self.current_search_engine)
         elif isinstance(qurl, str):
             qurl = QUrl(qurl)
-        
+
         browser = QWebEngineView()
         browser.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         browser.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-        
+
         browser.setUrl(qurl)
-        
+
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        
+
         browser_widget = QWidget()
         browser_layout = QVBoxLayout(browser_widget)
         browser_layout.setContentsMargins(0, 0, 0, 0)
         browser_layout.setSpacing(0)
         browser_layout.addWidget(browser)
-        
+
         layout.addWidget(browser_widget)
         layout.addWidget(self.button_widget)
-        
+
         layout.setStretchFactor(browser_widget, 1)
         layout.setStretchFactor(self.button_widget, 0)
-        
+
         i = self.tabs.addTab(container, label)
         self.tabs.setCurrentIndex(i)
-        
+
         browser.urlChanged.connect(lambda qurl, browser=browser: self.update_urlbar(qurl, browser))
-        browser.loadFinished.connect(lambda _, i=i, browser=browser: 
+        browser.loadFinished.connect(lambda _, i=i, browser=browser:
             self.tabs.setTabText(i, browser.page().title()))
 
     def navigate_back(self):
