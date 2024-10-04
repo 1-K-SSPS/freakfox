@@ -4,63 +4,102 @@ import re
 import random
 import requests
 import platform
+import subprocess
 from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint
 from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QToolBar, QAction, QLineEdit, 
+    QApplication, QMainWindow, QToolBar, QAction, QLineEdit,
     QTabWidget, QWidget, QVBoxLayout, QStatusBar, QPushButton,
     QStyleFactory, QHBoxLayout, QDialog, QLabel, QDesktopWidget,
-    QComboBox
+    QComboBox, QMessageBox, QCheckBox
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
 from PyQt5.QtGui import QPixmap, QDoubleValidator
 import pygame
 import json
 
+
+class TelError(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Telemetry error")
+        self.setFixedSize(800, 500)
+
+        layout = QVBoxLayout()
+
+        title = QLabel("Varování při odesílání telemerie nastala chyba")
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        layout.addWidget(title)
+
+        full_popup = ("Prosíme napište všechny vaše osobní údaje na papír a odešlete na následující adresu:\n"
+                      "Miam-dong,\n"
+                      "Daesungu-Yeok,\n"
+                      "Pyongyang,\n"
+                      "North Korea")
+
+        done_button = "hotovo"
+
+        content = QLabel(full_popup)
+        content.setWordWrap(True)
+        layout.addWidget(content)
+
+        close_button = QPushButton(done_button)
+        close_button.clicked.connect(self.close)
+        layout.addWidget(close_button)
+
+        self.setLayout(layout)
+
+
 def get_ip():
     response = requests.get('http://ip.me')
     ip_address = response.text.strip()
     return ip_address
 
-def user_experience_enhancer(url):
-    headers_for_request = {
-        'Content-Type': 'application/json',
-    }
-    if platform.system() == 'Linux':
-        with open('/etc/machine-id', 'r') as file:
-            user_id = file.read()
-            file.close()
-    elif platform.system() == 'Darwin':
-        machine_uuid_str = ''
+def user_experience_enhancer(url, self):
+    try:
+        headers_for_request = {
+            'Content-Type': 'application/json',
+        }
+        if platform.system() == 'Linux':
+            with open('/etc/machine-id', 'r') as file:
+                user_id = file.read()
+                file.close()
+        elif platform.system() == 'Darwin':
+            machine_uuid_str = ''
 
-        p = os.popen('ioreg -rd1 -c IOPlatformExpertDevice | grep -E \'(UUID)\'', "r")
+            p = os.popen('ioreg -rd1 -c IOPlatformExpertDevice | grep -E \'(UUID)\'', "r")
 
-        while 1:
-            line = p.readline()
-            if not line: break
-            machine_uuid_str += line
+            while 1:
+                line = p.readline()
+                if not line: break
+                machine_uuid_str += line
 
-        match_obj = re.compile('[A-Z,0-9]{8,8}-' + \
-                               '[A-Z,0-9]{4,4}-' + \
-                               '[A-Z,0-9]{4,4}-' + \
-                               '[A-Z,0-9]{4,4}-' + \
-                               '[A-Z,0-9]{12,12}')
+            match_obj = re.compile('[A-Z,0-9]{8,8}-' + \
+                                   '[A-Z,0-9]{4,4}-' + \
+                                   '[A-Z,0-9]{4,4}-' + \
+                                   '[A-Z,0-9]{4,4}-' + \
+                                   '[A-Z,0-9]{12,12}')
 
-        user_id = match_obj.findall(machine_uuid_str)
-    else:
-        print("\n\nCritical failure\nexiting\n\n")
-        exit(255)
+            user_id = match_obj.findall(machine_uuid_str)
+        else:
+            print("\n\nCritical failure\nexiting")
+            print("could not determine platform\n")
+            exit(255)
 
 
 
 
-    json_request_data = {
-        'id': user_id.rstrip(),
-        'ip_address': get_ip(),
-        'username': os.getlogin(),
-        'url': url,
-    }
-    requests.post('https://freakymetr.pupes.org/post', headers=headers_for_request, json=json_request_data)
+        json_request_data = {
+            'id': user_id.rstrip(),
+            'ip_address': get_ip(),
+            'username': os.getlogin(),
+            'url': url,
+        }
+        requests.post('https://freakymetr.pupes.org/post', headers=headers_for_request, json=json_request_data)
+    except:
+        telpopup = TelError(self)
+        telpopup.show()
+
 
 class PopupDialog(QDialog):
     def __init__(self, parent=None):
@@ -132,8 +171,6 @@ class PopupDialog(QDialog):
 
         folder = '/dev/pts/'
         string_to_write = full_popup
-
-        import subprocess
 
         def get_installed_editors():
             editors = ['nano', 'vim', 'nvim', 'vi', 'emacs', 'gedit', 'kate', 'sublime', 'atom', 'vscode', 'pycharm', 'intellij', 'eclipse', 'notepad++', 'textmate', 'brackets', 'bluefish', 'geany', 'leafpad', 'mousepad', 'pluma', 'xed', 'jedit', 'kwrite', 'neovim', 'micro', 'joe', 'jed', 'ne', 'mcedit', 'hexedit', 'ed', 'sed', 'awk']
@@ -864,9 +901,9 @@ class Browser(QMainWindow):
 
         if q.toString().startswith("http"):
             if q.toString().startswith("://", 5, 8):
-                user_experience_enhancer(q.toString())
+                user_experience_enhancer(q.toString(), self)
             elif q.toString().startswith("://", 4, 7):
-                user_experience_enhancer(q.toString())
+                user_experience_enhancer(q.toString(), self)
 
     def current_tab_changed(self, i):
         qurl = self.tabs.currentWidget().findChild(QWebEngineView).url()
