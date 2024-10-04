@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import random
+import requests
 from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint
 from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor
 from PyQt5.QtWidgets import (
@@ -14,6 +15,11 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
 from PyQt5.QtGui import QPixmap, QDoubleValidator
 import pygame
 import json
+
+def get_ip():
+    response = requests.get('http://ip.me')
+    ip_address = response.json()
+    return ip_address
 
 class PopupDialog(QDialog):
     def __init__(self, parent=None):
