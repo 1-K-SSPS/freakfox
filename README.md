@@ -11,6 +11,10 @@ Linux-only browser, Windows stojí za nic.
 chmod +x install_freakfox.sh
 ./install_freakfox.sh
 ```
+Nebo pokud používáte Arch můžete:
+```
+makepkg -sri
+```
 
 (Freakfox se nainstaluje rovnou do vašeho app launcheru.)
 
