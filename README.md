@@ -11,9 +11,9 @@ Linux-only browser, Windows stojí za nic.
 chmod +x install_freakfox.sh
 ./install_freakfox.sh
 ```
-Nebo pokud používáte Arch můžete:
+Nebo pokud používáte Arch můžete freakfox nainstalovat přímo z AURu:
 ```
-makepkg -sri
+yay -S freakfox-git
 ```
 
 (Freakfox se nainstaluje rovnou do vašeho app launcheru.)
@@ -29,8 +29,7 @@ Dependencies: Nic, script vše nainstaluje
 - Funkční tlačítka na ovládání basic browser operací (INSANE, ja vim ja vim)
 - Funkční vyhledávání (CRAZY)
 - 𝓯𝓻𝓮𝓪𝓴𝔂
-- Crazy install script
-- App launcher entry
+- App launcher entry 
 - Freakbob náhodně začne volat
 - Inbuilt gambling
 - Freakymode
