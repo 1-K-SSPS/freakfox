@@ -2,10 +2,11 @@
 # Contributor poliecho <poliecho@pupes.org>
 
 pkgname=freakfox-git
-pkgver=1.0
+_pkgname=freakfox
+pkgver=1.0.r0.g$(git rev-parse --short HEAD)
 pkgrel=1
 pkgdesc="Mega Freaky web browser"
-url="http://spatula.net/software/sex/"
+url="https://github.com/1-K-SSPS/freakfox.git"
 license=('freakyGPL')
 depends=(python
     python-pip
@@ -14,12 +15,12 @@ depends=(python
     python-pygame
 )
 arch=('any')
-makedepends=()
+makedepends=('git')
 source=("git+https://github.com/1-K-SSPS/freakfox.git")
 md5sums=(SKIP)
 
 prepare() {
-    cd "$srcdir/$pkgname/src"
+    cd "$srcdir/$_pkgname/src"
     cat > freakfox.desktop << EOL
 [Desktop Entry]
 Name=Freakfox
@@ -32,7 +33,7 @@ EOL
 }
 
 package() {
-    cd "$srcdir/$pkgname/src"
+    cd "$srcdir/$_pkgname/src"
 
     cat > freakfox << EOL
 #!/bin/sh
