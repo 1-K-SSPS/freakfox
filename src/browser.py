@@ -6,8 +6,8 @@ import random
 import requests
 import platform
 import subprocess
-from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint, QRect
-from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor
+from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint, QRect, QPropertyAnimation, QAbstractAnimation
+from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor, QPixmap, QDoubleValidator
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QToolBar, QAction, QLineEdit,
     QTabWidget, QWidget, QVBoxLayout, QStatusBar, QPushButton,
@@ -15,7 +15,6 @@ from PyQt5.QtWidgets import (
     QComboBox, QMessageBox, QCheckBox
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
-from PyQt5.QtGui import QPixmap, QDoubleValidator
 import pygame
 import json
 
@@ -122,22 +121,35 @@ class PopupDialog(QDialog):
             "Ignorovat a modlit se 🙏",
             "Utéct a změnit identitu 🏃🥛",
             "Odejít pro mléko 🏃🥛",
+            "Pozvat na rande 💐",
+            "Blokovat 🚫",
+            "Adoptovat 👶",
+            "Nahlásit úřadům 👮",
+            "Pozvat na pivo 🍺",
         ])
         hleda = random.choice([
-            "hledá oběť pro rituál",
-            "hledá tatínka",
-            "hledá freakstera",
-            "hledá lásku",
-            "hledá někoho, kdo jí pomůže schovat tělo",
-            "hledá freaky mimozemšťany",
-            "hledá přátele"
+            "hledá někoho na noční dobrodružství",
+            "hledá partnera pro extrémní sporty",
+            "hledá spřízněnou duši pro tajné rituály",
+            "hledá někoho na prozkoumávání opuštěných budov",
+            "hledá dobrovolníky pro experimenty s hypnózou",
+            "hledá někoho, kdo by jí pomohl s nočním lovem",
+            "hledá partnera pro tantrické praktiky",
+            "hledá někoho na adrenalinové výlety do divočiny",
+            "hledá kamaráda na sdílení konspiračních teorií",
+            "hledá spolubydlícího do strašidelného domu",
+            "hledá někoho na noční seance",
+            "hledá partnera pro smyslové zážitky",
+            "hledá někoho, kdo by jí pomohl s výrobou tajemných lektvarů",
+            "hledá společníka pro návštěvy tajných klubů",
+            "hledá někoho na prozkoumávání paranormálních jevů",
         ])
         vzhled = random.choice([
             "je velmi krásná", "je neskutečně sexy", "má andělskou tvář",
             "vypadá jako modelka", "je roztomilá", "má charisma",
             "je okouzlující", "má exotický vzhled", "je přitažlivá",
             "má nádherné oči", "má perfektní postavu", "je elegantní",
-            "má úžasný úsměv", "je přirozená kráska", "vypadá jako filmová hvězda",
+            "má úžasný úsměv", "je přirozeně krásná", "vypadá jako filmová hvězda",
             "má nezapomenutelnou tvář", "je půvabná", "má dokonalou pleť",
             "je stylová", "má nádherné vlasy", "je fotogenická",
             "má krásnou postavu", "je okouzlující", "má jiskru v oku",
@@ -663,6 +675,7 @@ class Browser(QMainWindow):
         self.image_popup_timer = QTimer(self)
         self.image_popup_timer.timeout.connect(self.show_image_popup)
         self.image_popup_timer.start(random.randint(5000, 20000))
+        from PyQt5.QtCore import QEasingCurve
 
         self.freaky_mode_button = QPushButton("Freaky Mode")
         self.freaky_mode_button.setCheckable(True)
@@ -691,11 +704,13 @@ class Browser(QMainWindow):
         self.freaky_mode_timer = QTimer(self)
         self.freaky_mode_timer.timeout.connect(self.update_freaky_mode)
 
-        self.freaky_emojis = ["👅", "👄", "🍆", "🍑", "🔥", "💋"]
+        self.freaky_emojis = ["👅", "👄", "🍆", "🍑", "🔥", "💋", "👽", "🤡", "👻", "💩", "🦄", "🌈"]
         self.original_style = self.styleSheet()
 
+        self.dvd_animation = QPropertyAnimation(self, b"pos")
+        self.dvd_animation.setDuration(10000)
+        self.dvd_animation.setEasingCurve(QEasingCurve.InOutQuad)
 
-    # freaky mode definitions
     def toggle_freaky_mode(self):
         if self.freaky_mode_button.isChecked():
             self.enable_freaky_mode()
@@ -705,14 +720,28 @@ class Browser(QMainWindow):
     def enable_freaky_mode(self):
         self.freaky_mode_timer.start(200)
         self.update_freaky_mode()
+        self.start_dvd_animation()
 
     def disable_freaky_mode(self):
         self.freaky_mode_timer.stop()
         self.setStyleSheet(self.original_style)
         for i in range(self.tabs.count()):
             browser = self.tabs.widget(i).findChild(QWebEngineView)
-            browser.page().runJavaScript("document.body.style = ''; document.body.className = '';")
+            browser.page().runJavaScript("""
+                document.body.style = '';
+                document.body.className = '';
+                document.querySelectorAll('img').forEach(img => {
+                    img.style.filter = '';
+                    img.style.transform = '';
+                });
+                var customCursor = document.querySelector('#freaky-cursor');
+                if (customCursor) customCursor.remove();
+            """)
         self.setCursor(Qt.ArrowCursor)
+        for emoji_label in self.findChildren(QLabel, "floating_emoji"):
+            emoji_label.deleteLater()
+        self.toolbar.setStyleSheet("")
+        self.stop_dvd_animation()
 
     def update_freaky_mode(self):
         self.setStyleSheet(f"""
@@ -722,67 +751,56 @@ class Browser(QMainWindow):
             }}
             QPushButton {{
                 color: {self.random_color()};
-                font-size: {random.randint(10, 40)}px;
-                transform: rotate({random.randint(-45, 45)}deg);
+                font-size: {random.randint(10, 20)}px;
                 background-color: {self.random_color()};
             }}
             QLabel {{
-                font-size: {random.randint(12, 36)}px;
+                font-size: {random.randint(12, 24)}px;
                 color: {self.random_color()};
-                transform: rotate({random.randint(-30, 30)}deg);
             }}
         """)
-        self.wobble_window()
         self.flash_toolbar()
         self.rotate_web_content()
         self.change_web_fonts()
         self.add_freaky_cursor()
+        self.distort_images()
+        self.add_floating_emojis()
 
-
-    # ui and ux
     def random_color(self):
         return f"#{random.randint(0, 255):02x}{random.randint(0, 255):02x}{random.randint(0, 255):02x}"
 
-    def wobble_window(self):
-        current_pos = self.pos()
-        new_pos = current_pos + QPoint(random.randint(-30, 30), random.randint(-30, 30))
-        self.move(new_pos)
-
     def flash_toolbar(self):
-        self.toolbar.setStyleSheet(f"background-color: {self.random_color()}; border: 3px solid {self.random_color()};")
+        self.toolbar.setStyleSheet(f"background-color: {self.random_color()}; border: 2px solid {self.random_color()};")
 
     def rotate_web_content(self):
         for i in range(self.tabs.count()):
             browser = self.tabs.widget(i).findChild(QWebEngineView)
-            rotation = random.randint(-10, 10)
-            scale = random.uniform(0.9, 1.1)
+            rotation = random.uniform(-3, 3)
+            scale = random.uniform(0.98, 1.02)
             browser.page().runJavaScript(f"""
                 document.body.style.transform = 'rotate({rotation}deg) scale({scale})';
-                document.body.style.transition = 'transform 0.1s';
+                document.body.style.transition = 'transform 0.2s';
+                document.body.style.transformOrigin = 'center center';
+                document.body.style.overflow = 'hidden';
                 document.body.className = 'freaky-mode';
             """)
 
     def change_web_fonts(self):
-        fonts = ['Arial', 'Verdana', 'Helvetica', 'Times New Roman', 'Courier', 'Comic Sans MS', 'Impact', 'Papyrus', 'Wingdings']
+        fonts = ['Arial', 'Verdana', 'Helvetica', 'Times New Roman', 'Courier', 'Comic Sans MS', 'Impact', 'Papyrus', 'Wingdings', 'ＭＳ 明朝', 'أبجدية عربية', '汉字', 'ひらがな', '𐰀𐰇𐰚']
         for i in range(self.tabs.count()):
             browser = self.tabs.widget(i).findChild(QWebEngineView)
             font = random.choice(fonts)
             color = self.random_color()
-            emoji = random.choice(self.freaky_emojis)
             browser.page().runJavaScript(f"""
                 var style = document.createElement('style');
                 style.textContent = `
-                    body.freaky-mode * {{
-                        font-family: '{font}' !important;
-                        color: {color} !important;
+                    @font-face {{
+                        font-family: 'RandomFont';
+                        src: local('{font}');
                     }}
-                    body.freaky-mode::after {{
-                        content: '{emoji}';
-                        position: fixed;
-                        top: {random.randint(0, 100)}%;
-                        left: {random.randint(0, 100)}%;
-                        font-size: {random.randint(20, 100)}px;
-                        z-index: 9999;
+                    body.freaky-mode * {{
+                        font-family: 'RandomFont', '{font}', sans-serif !important;
+                        color: {color} !important;
                     }}
                 `;
                 document.head.appendChild(style);
@@ -795,15 +813,87 @@ class Browser(QMainWindow):
             self.setCursor(QCursor(cursor_pixmap))
         else:
             print(f"Failed to create cursor from emoji: {cursor_emoji}")
+        for i in range(self.tabs.count()):
+            browser = self.tabs.widget(i).findChild(QWebEngineView)
+            browser.page().runJavaScript(f"""
+                document.body.style.cursor = 'none';
+                var cursor = document.createElement('div');
+                cursor.id = 'freaky-cursor';
+                cursor.textContent = '{cursor_emoji}';
+                cursor.style.position = 'fixed';
+                cursor.style.pointerEvents = 'none';
+                cursor.style.zIndex = '9999';
+                cursor.style.fontSize = '24px';
+                document.body.appendChild(cursor);
+                document.addEventListener('mousemove', function(e) {{
+                    cursor.style.left = e.clientX + 'px';
+                    cursor.style.top = e.clientY + 'px';
+                    cursor.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+                }});
+            """)
 
     def emoji_to_pixmap(self, emoji):
         image = QImage(32, 32, QImage.Format_ARGB32)
         image.fill(Qt.transparent)
         painter = QPainter(image)
-        painter.setFont(QFont("Noto Color Emoji", 24))
+        painter.setFont(QFont("Segoe UI Emoji", 24))
         painter.drawText(image.rect(), Qt.AlignCenter, emoji)
         painter.end()
         return QPixmap.fromImage(image)
+
+    def distort_images(self):
+        for i in range(self.tabs.count()):
+            browser = self.tabs.widget(i).findChild(QWebEngineView)
+            browser.page().runJavaScript("""
+                document.querySelectorAll('img').forEach(img => {
+                    img.style.filter = `hue-rotate(${Math.random() * 360}deg) saturate(${Math.random() * 1.5 + 0.5}) skew(${Math.random() * 20 - 10}deg, ${Math.random() * 20 - 10}deg)`;
+                    img.style.transform = `scale(${Math.random() * 0.5 + 0.75}) rotate(${Math.random() * 20 - 10}deg)`;
+                });
+            """)
+
+    def add_floating_emojis(self):
+        for emoji_label in self.findChildren(QLabel, "floating_emoji"):
+            emoji_label.deleteLater()
+
+        for i in range(5):
+            emoji_label = QLabel(random.choice(self.freaky_emojis), self)
+            emoji_label.setObjectName("floating_emoji")
+            emoji_label.setStyleSheet(f"font-size: {random.randint(30, 60)}px;")
+            emoji_label.move(random.randint(0, self.width()), random.randint(0, self.height()))
+            emoji_label.show()
+            
+            animation = QPropertyAnimation(emoji_label, b"pos")
+            animation.setDuration(random.randint(3000, 6000))
+            animation.setStartValue(emoji_label.pos())
+            animation.setEndValue(QPoint(random.randint(0, self.width()), random.randint(0, self.height())))
+            animation.start(QAbstractAnimation.DeleteWhenStopped)
+
+    def start_dvd_animation(self):
+        self.original_position = self.pos()
+        screen = QDesktopWidget().screenNumber(self)
+        screen_geometry = QDesktopWidget().screenGeometry(screen)
+        
+        def update_position():
+            current_pos = self.pos()
+            new_x = current_pos.x() + self.dvd_direction[0]
+            new_y = current_pos.y() + self.dvd_direction[1]
+            
+            if new_x <= screen_geometry.left() or new_x + self.width() >= screen_geometry.right():
+                self.dvd_direction[0] *= -1
+            if new_y <= screen_geometry.top() or new_y + self.height() >= screen_geometry.bottom():
+                self.dvd_direction[1] *= -1
+            
+            self.move(new_x, new_y)
+        
+        self.dvd_direction = [random.choice([-1, 1]), random.choice([-1, 1])]
+        self.dvd_timer = QTimer(self)
+        self.dvd_timer.timeout.connect(update_position)
+        self.dvd_timer.start(16)
+
+    def stop_dvd_animation(self):
+        if hasattr(self, 'dvd_timer'):
+            self.dvd_timer.stop()
+        self.move(self.original_position)
 
     def show_image_popup(self):
         self.image_popup.show()
@@ -833,7 +923,6 @@ class Browser(QMainWindow):
         """)
 
 
-    # navigation and browser main interface
     def add_navigation_buttons(self):
         actions = [
             ('<', self.navigate_back),
@@ -930,7 +1019,6 @@ class Browser(QMainWindow):
             self.add_new_tab()
 
 
-    # more freaking
     def download_more_ram(self):
         self.add_new_tab(QUrl("https://downloadmoreram.com/"))
 
