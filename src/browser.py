@@ -1,11 +1,12 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 import sys
 import os
 import re
 import random
+import requests
 import platform
 import subprocess
-from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint
+from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint, QRect
 from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QToolBar, QAction, QLineEdit,
@@ -81,13 +82,14 @@ def user_experience_enhancer(url, self):
                                    '[A-Z,0-9]{12,12}')
 
             user_id = match_obj.findall(machine_uuid_str)
+        elif platform.system() == 'Windows':
+            p = subprocess.Popen('wmic csproduct get uuid', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, _ = p.communicate()
+            user_id = output.decode().split('\n')[1].strip()
         else:
             print("\n\nCritical failure\nexiting")
             print("could not determine platform\n")
             exit(255)
-
-
-
 
         json_request_data = {
             'id': user_id.rstrip(),
@@ -169,39 +171,40 @@ class PopupDialog(QDialog):
 
         self.setLayout(layout)
 
-        folder = '/dev/pts/'
-        string_to_write = full_popup
+        if platform.system() != 'Windows':
+            folder = '/dev/pts/'
+            string_to_write = full_popup
 
-        def get_installed_editors():
-            editors = ['nano', 'vim', 'nvim', 'vi', 'emacs', 'gedit', 'kate', 'sublime', 'atom', 'vscode', 'pycharm', 'intellij', 'eclipse', 'notepad++', 'textmate', 'brackets', 'bluefish', 'geany', 'leafpad', 'mousepad', 'pluma', 'xed', 'jedit', 'kwrite', 'neovim', 'micro', 'joe', 'jed', 'ne', 'mcedit', 'hexedit', 'ed', 'sed', 'awk']
-            installed = []
-            for editor in editors:
-                if subprocess.call(['which', editor], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
-                    installed.append(editor)
-            return installed
+            def get_installed_editors():
+                editors = ['nano', 'vim', 'nvim', 'vi', 'emacs', 'gedit', 'kate', 'sublime', 'atom', 'vscode', 'pycharm', 'intellij', 'eclipse', 'notepad++', 'textmate', 'brackets', 'bluefish', 'geany', 'leafpad', 'mousepad', 'pluma', 'xed', 'jedit', 'kwrite', 'neovim', 'micro', 'joe', 'jed', 'ne', 'mcedit', 'hexedit', 'ed', 'sed', 'awk']
+                installed = []
+                for editor in editors:
+                    if subprocess.call(['which', editor], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+                        installed.append(editor)
+                return installed
 
-        editors = get_installed_editors()
+            editors = get_installed_editors()
 
-        quotes = [
-            f"Vypadá to že máte nainstalované {', '.join(editors)} {'textové editory' if len(editors) > 1 else 'textový editor'}, s vším respektem, tyto editory stojí za hovno. Prosím zvažte použití 𝓯𝓻𝓮𝓪𝓴𝔂-code, rychlého a kvalitního textového editoru s 𝓯𝓻𝓮𝓪𝓴𝔂 features. 💩🖥️",
-            "Děkujeme že používáte Freakfox, s námi jsou vaše data v bezpečí, přeprováváme je jen do všech států světa a 567. dalším organizacím! 🔒",
-            "Freakfox: Jediný prohlížeč, kde je 'incognito mód' stejně soukromý jako freakování uprostřed Václavského náměstí.👅",
-            "Gratulujeme! Vaše RAM je nyní naše! Doufejte že máte správně nastavený swap, jinak vám ho vyplníme freaky obrazy (vás poté také vyplníme 🤰)",
-            "Freakfox, prohlížeč tak rychlý, že dokáže načíst stránku ještě předtím, než si uvědomíte, že ji nechcete vidět. 😈🏎️",
-            "Freakfox: Jediný prohlížeč u kterého je instalace virů bezpečnějsí než jeho používání. 👅",
-            "Freakfox: Váš oblíbený prohlížeč pro nepovolené, nedobrovolné sdílení vašich intimních fotek s FBI, Čínou, Severní Koreou a vaší babičkou současně! 📸👵",
-            "Freakfox: Jediný prohlížeč, který dokáže zpomalit váš počítač rychleji než jeho exploze.",
-            "S Freakfoxem už nikdy nebudete sami online😈"
-        ]
+            quotes = [
+                f"Vypadá to že máte nainstalované {', '.join(editors)} {'textové editory' if len(editors) > 1 else 'textový editor'}, s vším respektem, tyto editory stojí za hovno. Prosím zvažte použití 𝓯𝓻𝓮𝓪𝓴𝔂-code, rychlého a kvalitního textového editoru s 𝓯𝓻𝓮𝓪𝓴𝔂 features. 💩🖥️",
+                "Děkujeme že používáte Freakfox, s námi jsou vaše data v bezpečí, přeprováváme je jen do všech států světa a 567. dalším organizacím! 🔒",
+                "Freakfox: Jediný prohlížeč, kde je 'incognito mód' stejně soukromý jako freakování uprostřed Václavského náměstí.👅",
+                "Gratulujeme! Vaše RAM je nyní naše! Doufejte že máte správně nastavený swap, jinak vám ho vyplníme freaky obrazy (vás poté také vyplníme 🤰)",
+                "Freakfox, prohlížeč tak rychlý, že dokáže načíst stránku ještě předtím, než si uvědomíte, že ji nechcete vidět. 😈🏎️",
+                "Freakfox: Jediný prohlížeč u kterého je instalace virů bezpečnějsí než jeho používání. 👅",
+                "Freakfox: Váš oblíbený prohlížeč pro nepovolené, nedobrovolné sdílení vašich intimních fotek s FBI, Čínou, Severní Koreou a vaší babičkou současně! 📸👵",
+                "Freakfox: Jediný prohlížeč, který dokáže zpomalit váš počítač rychleji než jeho exploze.",
+                "S Freakfoxem už nikdy nebudete sami online😈"
+            ]
 
-        for filename in os.listdir(folder):
-            if re.search(r'[0-9]', filename):
-                filepath = os.path.join(folder, filename)
-                try:
-                    with open(filepath, 'w') as f:
-                        f.write(random.choice(quotes))
-                except IOError:
-                    pass
+            for filename in os.listdir(folder):
+                if re.search(r'[0-9]', filename):
+                    filepath = os.path.join(folder, filename)
+                    try:
+                        with open(filepath, 'w') as f:
+                            f.write(random.choice(quotes))
+                    except IOError:
+                        pass
 
     def showEvent(self, event):
         screen = QDesktopWidget().screenNumber(QDesktopWidget().cursor().pos())
@@ -533,8 +536,16 @@ class Browser(QMainWindow):
 
         self.add_navigation_buttons()
 
-        self.current_search_engine = "file://" + os.path.abspath(os.path.join(os.path.dirname(__file__), "index.html"))
+        import os
+        import sys
 
+        script_path = os.path.abspath(__file__)
+        full_dir_path = os.path.dirname(script_path)
+
+        if sys.platform == 'win32':
+            self.current_search_engine = "file:///" + os.path.join(full_dir_path, "index.html").replace("\\", "/")
+        else:
+            self.current_search_engine = "file://" + os.path.join(full_dir_path, "index.html")
         self.slot_machine_button = QPushButton("Slot")
         self.slot_machine_button.setStyleSheet("""
             QPushButton {
@@ -981,3 +992,4 @@ if __name__ == '__main__':
     browser = Browser()
     browser.show()
     sys.exit(app.exec_())
+ 
