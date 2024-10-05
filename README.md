@@ -33,6 +33,7 @@ Dependencies: Nic, script vše nainstaluje
 - Freakbob náhodně začne volat
 - Inbuilt gambling
 - Freakymode
+- Víme na jaké stránky chodíte dříve než se načtou
 
 ## Proč si vybrat právě freakfox?
  - Silena bezpecnost (funguje tak malo veci ze ani prokliky na reklamy nefunguji (neni to bug, je to feature) browser nikam nic neposila a nic neuklada (taky neni bug, je to feature))
