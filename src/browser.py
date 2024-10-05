@@ -3,7 +3,6 @@ import sys
 import os
 import re
 import random
-import requests
 import platform
 import subprocess
 from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint
