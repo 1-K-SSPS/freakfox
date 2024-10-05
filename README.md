@@ -1,26 +1,29 @@
 # Freakfox
 ### 𝓯𝓻𝓮𝓪𝓴𝔂  browser 👅👅👅
 
-Linux-only browser, Windows stojí za nic.
-
 > [!Warning]  
 > Script nemusí fungovat na všech distribucích.
+> Pokud AUR package nefunguje, stáhujte přes install_freakfox.sh script
 
-### Instalace:
+### General linux/mac instalace:
 ```
 chmod +x install_freakfox.sh
 ./install_freakfox.sh
 ```
-Arch:
+### Arch (AUR):
 ```
 yay -S freakfox-git
 ```
+### Windows:
+Stáhněte install_freakfox_windows.bat a otevřete ho
+> [!Warning]  
+> Script budete pravděpodobně muset pustit 2x
 
-(Freakfox se nainstaluje rovnou do vašeho app launcheru.)
+### Spuštění po instalaci:
+Windows: Ze start menu
+Linux/Mac: Z vašeho app launcheru
 
-![image](https://github.com/user-attachments/assets/5340ba52-a4c5-46d9-b2f5-6de15c94b361)
-
-Dependencies: Nic, script vše nainstaluje
+![image](https://github.com/user-attachments/assets/230a9b34-9e26-4bda-a098-2f6062aa8b63)
 
 ## Features:
 - 4 Search enginy (cornhub.website, google.com, duckduckgo.com, 1kparky.unas.cz)
