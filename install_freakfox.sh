@@ -145,6 +145,9 @@ install_packages() {
     fi
 }
 
+# Install Directory
+INSTALL_DIR=~/.local/share/freakfox
+
 # Detect distro
 if grep -q "Arch" /etc/os-release; then
     install_packages "arch"
@@ -165,7 +168,6 @@ if ! command -v python3 &>/dev/null; then
     exit 1
 fi
 
-INSTALL_DIR=~/.local/share/freakfox
 echo "Installing in directory: $INSTALL_DIR"
 
 mkdir -p "$INSTALL_DIR" || { echo "Failed to create installation directory"; exit 1; }
