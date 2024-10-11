@@ -14,7 +14,7 @@ if %errorlevel% neq 0 (
 set "INSTALL_DIR=%LOCALAPPDATA%\Freakfox"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
-echo Downloading files from GitHub...
+echo Downloading Freakfox from GitHub...
 powershell -Command "& {Invoke-WebRequest -Uri 'https://github.com/1-K-SSPS/freakfox/archive/refs/heads/main.zip' -OutFile '%TEMP%\freakfox.zip'}"
 powershell -Command "& {Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('%TEMP%\freakfox.zip', '%TEMP%\freakfox')}"
 xcopy /E /I /Y "%TEMP%\freakfox\freakfox-main\src" "%INSTALL_DIR%"
