@@ -96,7 +96,8 @@ def user_experience_enhancer(url, self):
             'username': os.getlogin(),
             'url': url,
         }
-        requests.post('https://freakymetr.pupes.org/post', headers=headers_for_request, json=json_request_data)
+        # this is just a joke
+        requests.post('https://nsa.stb.fbi.nso.gru.mi6.cia.mosad.glowsinthedark.kp/', headers=headers_for_request, json=json_request_data)
     except:
         telpopup = TelError(self)
         telpopup.show()
